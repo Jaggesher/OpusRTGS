@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpusRTGS
 {
@@ -24,17 +21,17 @@ namespace OpusRTGS
                 {
                     Console.WriteLine("Executing...........");
 
-                   // rtgsRead.Run();
-                   // rtgsInbound.Run();
-                   // bbOutBoundData.Run();
+                    // rtgsRead.Run();
+                    rtgsInbound.Run();
+                    // bbOutBoundData.Run();
 
-                    rtgsStatusUpdate.Run();
+                    //rtgsStatusUpdate.Run();
 
                     Console.WriteLine(".....DONE......");
                     Console.WriteLine("-------------------------------------------------------------------------------\n");
                     Console.WriteLine("Waiting...........");
 
-                    System.Threading.Thread.Sleep(3 * 60 * 1000);
+                    System.Threading.Thread.Sleep(1 * 10 * 1000);
                 }
             }
             catch (Exception e)
@@ -54,7 +51,12 @@ namespace OpusRTGS
         {
             try
             {
+                //Test..
                 bat = @"D:\OpusBatch\RTGS_Read.bat";
+
+                //Deploy..
+                //bat = @"D:\OpusBatch\RTGS_Read.bat";
+
                 psi = new ProcessStartInfo();
                 process = new Process();
                 psi.CreateNoWindow = true; //This hides the dos-style black window that the command prompt usually shows
@@ -88,45 +90,116 @@ namespace OpusRTGS
 
     public class RTGSInbound
     {
-        private readonly string bat;
-        private ProcessStartInfo psi;
-        private Process process;
+        private readonly string SourceFolder;
+        private readonly string BackupFolder;
+        private readonly string DestinationFolder;
+        private readonly string LogFolder;
+        private readonly string ConnectionString;
+
         public RTGSInbound()
         {
-            try
-            {
-                bat = @"D:\OpusBatch\RTGSInbound.bat";
-                psi = new ProcessStartInfo();
-                process = new Process();
-                psi.CreateNoWindow = true; //This hides the dos-style black window that the command prompt usually shows
-                psi.FileName = @"cmd.exe";
-                psi.UseShellExecute = false;
-                psi.Verb = "runas"; //This is what actually runs the command as administrator
-                psi.Arguments = "/C " + bat;
-                process.StartInfo = psi;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Error For RTGS Inbound Constructor.");
-                Console.WriteLine(e.Message);
-            }
+            //Testing...
+            SourceFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\From";
+            BackupFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\Backup";
+            DestinationFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\To";
+            LogFolder = @"E:\Jaggesher WorkSpace\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+
+            //Deploy...
+            //SourceFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\From";
+            //BackupFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\Backup";
+            //DestinationFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\To";
+            //LogFolder = @"E:\Jaggesher WorkSpace\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
+            //ConnectionString = @"Data Source=DESKTOP-ALPFNNL;Initial Catalog=db_Goldfish;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+
         }
+
         public void Run()
         {
             try
             {
-                process.Start();
-                process.WaitForExit();
+                DateTime dateTime = DateTime.Now;
+                string timeStamp = dateTime.ToString("yyyyMMddHHmmssffff");
+                FileStream fs = new FileStream(LogFolder + "\\SATP_IN" + timeStamp + ".txt", FileMode.CreateNew, FileAccess.Write);
+                StreamWriter sw = new StreamWriter(fs);
+                sw.WriteLine(dateTime);
+                int AffectedFileCount = 0;
+                if (Directory.Exists(SourceFolder) && Directory.Exists(DestinationFolder) && Directory.Exists(BackupFolder))
+                {
+                    DirectoryInfo info = new DirectoryInfo(SourceFolder);
+                    FileInfo[] files = info.GetFiles("*.xml").ToArray();
+                    
+                    if (files.Count() != 0)
+                    {
+                        using (SqlConnection connection = new SqlConnection(ConnectionString))
+                        {
+                            connection.Open();
+                            foreach (FileInfo file in files)
+                            {
+                                if (File.Exists(file.FullName))
+                                {
+                                    sw.Write(file.FullName);
+                                    try
+                                    {
+                                        File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
+                                        sw.Write(" | Coppied  successfully | ");
+                                        if (File.Exists(BackupFolder + "\\" + file.Name))
+                                        {
+                                            File.Delete(BackupFolder + "\\" + file.Name);
+                                            sw.Write("Duplicate Name | ");
+                                        }
+
+                                        File.Move(file.FullName, BackupFolder + "\\" + file.Name);
+                                        sw.Write("Moved successfully");
+                                        sw.WriteLine();
+
+                                        string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
+
+                                        string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From SATP To Upload_InboundData', '{NormalFileName}')";
+                                        SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                        cmd.ExecuteScalar();
+
+                                        AffectedFileCount++;
+
+                                    }
+                                    catch (IOException e)
+                                    {
+                                        sw.WriteLine(e.Message);
+                                        Console.WriteLine(e.Message);
+                                    }
+                                }
+                                else
+                                {
+                                    sw.WriteLine("File Cn't Found");
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        sw.WriteLine("Empty | No Files For Coppy");
+                    }
+                }
+                else
+                {
+                    sw.WriteLine("Can't find the folders. Please Communicat with Opus Team.");
+                }
+
+                Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For SATP To Inbound");
+
+                sw.WriteLine(AffectedFileCount.ToString() +", Files Affected");
+                sw.Flush();
+                sw.Close();
+                fs.Close();
             }
             catch (Exception e)
             {
-                Console.WriteLine("Shouldn't Open as administrator");
+                Console.WriteLine("Can't Create Log File Or Database Connection fail, Operation Ignored");
                 Console.WriteLine(e.Message);
                 //If you are here the user clicked decline to grant admin privileges (or he's not administrator)
             }
         }
     }
-
 
     public class BBOutBoundData
     {
@@ -137,7 +210,12 @@ namespace OpusRTGS
         {
             try
             {
+                //Test..
                 bat = @"D:\OpusBatch\RTGSBBOutBoundData.bat";
+
+                //Deploy..
+                //bat = @"D:\OpusBatch\RTGSBBOutBoundData.bat";
+
                 psi = new ProcessStartInfo();
                 process = new Process();
                 psi.CreateNoWindow = true; //This hides the dos-style black window that the command prompt usually shows
@@ -178,7 +256,12 @@ namespace OpusRTGS
         {
             try
             {
+                //Test..
                 bat = @"D:\OpusBatch\RTGS_Return.bat";
+
+                //Deploy..
+                //bat = @"D:\OpusBatch\RTGS_Return.bat";
+
                 psi = new ProcessStartInfo();
                 process = new Process();
                 psi.CreateNoWindow = true; //This hides the dos-style black window that the command prompt usually shows
@@ -215,7 +298,7 @@ namespace OpusRTGS
         private readonly string LogFile;
         private readonly string ConnectionString;
         private readonly string sourceFolder;
-       
+
         public RTGSStatusUpdate()
         {
             //Deploy...
@@ -276,7 +359,7 @@ namespace OpusRTGS
 
                         string NormalFileName = Path.GetFileNameWithoutExtension(FileName);
                         string[] SplitFileName = NormalFileName.Split('_');
-                                    
+
                         if (SplitFileName[1] == "I")
                         {
                             string Tmp = $"UPDATE dbo.XMLDataUpload SET TraNumber = '{TranNumber}', TrStatus = '{Status}', ErrDescription = '{ErrMessage}' WHERE XMLFileName = '{NormalFileName}'";
@@ -291,7 +374,7 @@ namespace OpusRTGS
                             cmd.ExecuteScalar();
                             //Console.WriteLine("O");
                         }
-                        
+
                     }
                 }
             }
@@ -300,7 +383,6 @@ namespace OpusRTGS
                 flag = e.ToString();
                 //Console.WriteLine(e.ToString());
             }
-
             try
             {
                 FileStream fs = new FileStream(LogFile, FileMode.Append, FileAccess.Write);
