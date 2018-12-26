@@ -21,9 +21,9 @@ namespace OpusRTGS
                 {
                     Console.WriteLine("Executing...........");
 
-                    // rtgsRead.Run();
-                    rtgsInbound.Run();
-                   // bbOutBoundData.Run();
+                     rtgsRead.Run();
+                     rtgsInbound.Run();
+                     bbOutBoundData.Run();
 
                     //rtgsStatusUpdate.Run();
 
@@ -54,10 +54,10 @@ namespace OpusRTGS
         public RTGSRead()
         {
             //Testing...
-            SourceFolder = @"E:\Jaggesher WorkSpace\RTGS\BBOutBound_SATP\From";
-            BackupFolder = @"E:\Jaggesher WorkSpace\RTGS\BBOutBound_SATP\Backup";
-            DestinationFolder = @"E:\Jaggesher WorkSpace\RTGS\BBOutBound_SATP\To";
-            LogFolder = @"E:\Jaggesher WorkSpace\RTGS\BackUpRTGSInWordLogFiles\BBOutBound_SATP";
+            SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\From";
+            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\Backup";
+            DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\To";
+            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
 
             //Deploy...
@@ -75,7 +75,7 @@ namespace OpusRTGS
             {
                 DateTime dateTime = DateTime.Now;
                 string timeStamp = dateTime.ToString("yyyyMMddHHmmssffff");
-                FileStream fs = new FileStream(LogFolder + "\\SATP_IN" + timeStamp + ".txt", FileMode.CreateNew, FileAccess.Write);
+                FileStream fs = new FileStream(LogFolder + "\\XML_READ" + timeStamp + ".txt", FileMode.CreateNew, FileAccess.Write);
                 StreamWriter sw = new StreamWriter(fs);
                 sw.WriteLine(dateTime);
                 int AffectedFileCount = 0;
@@ -112,17 +112,21 @@ namespace OpusRTGS
                                         string[] SplitFileName = NormalFileName.Split('_');
                                         if (SplitFileName[1] == "TT")
                                         {
+
                                             //string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From BBOutBound To SATP Input', '{NormalFileName}')";
                                             //SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             //cmd.ExecuteScalar();
                                         }
                                         else
                                         {
-                                            //string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From BBOutBound To SATP Input', '{NormalFileName}')";
-                                            //SqlCommand cmd = new SqlCommand(Tmp, connection);
-                                            //cmd.ExecuteScalar();
+                                            string Tmp1 = $"SELECT FileName FROM XMLDataUpload WHERE XMLFileName = '{NormalFileName}'";
+                                            SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
+                                            string mainFileName = (string)cmd1.ExecuteScalar();
+
+                                            string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName, FileName) VALUES(getdate(), 'File Moved From XML To T24 READ', '{NormalFileName}','{mainFileName}')";
+                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                            cmd.ExecuteScalar();
                                         }
-                                        
 
                                         AffectedFileCount++;
 
@@ -150,7 +154,7 @@ namespace OpusRTGS
                     sw.WriteLine("Can't find the folders. Please Communicat with Opus Team.");
                 }
 
-                Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For SATP To Inbound");
+                Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For XML To T24Read");
 
                 sw.WriteLine(AffectedFileCount.ToString() + ", Files Affected");
                 sw.Flush();
@@ -206,7 +210,7 @@ namespace OpusRTGS
                 {
                     DirectoryInfo info = new DirectoryInfo(SourceFolder);
                     FileInfo[] files = info.GetFiles("*.xml").ToArray();
-                    
+
                     if (files.Count() != 0)
                     {
                         using (SqlConnection connection = new SqlConnection(ConnectionString))
@@ -263,9 +267,9 @@ namespace OpusRTGS
                     sw.WriteLine("Can't find the folders. Please Communicat with Opus Team.");
                 }
 
-                Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For BBOutBound To SATP Input");
+                Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For SATP To Inbound");
 
-                sw.WriteLine(AffectedFileCount.ToString() +", Files Affected");
+                sw.WriteLine(AffectedFileCount.ToString() + ", Files Affected");
                 sw.Flush();
                 sw.Close();
                 fs.Close();
@@ -290,10 +294,10 @@ namespace OpusRTGS
         public BBOutBoundData()
         {
             //Testing...
-            SourceFolder = @"E:\Jaggesher WorkSpace\RTGS\BBOutBound_SATP\From";
-            BackupFolder = @"E:\Jaggesher WorkSpace\RTGS\BBOutBound_SATP\Backup";
-            DestinationFolder = @"E:\Jaggesher WorkSpace\RTGS\BBOutBound_SATP\To";
-            LogFolder = @"E:\Jaggesher WorkSpace\RTGS\BackUpRTGSInWordLogFiles\BBOutBound_SATP";
+            SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\From";
+            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\Backup";
+            DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\To";
+            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\BBOutBound_SATP";
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
 
             //Deploy...
@@ -311,7 +315,7 @@ namespace OpusRTGS
             {
                 DateTime dateTime = DateTime.Now;
                 string timeStamp = dateTime.ToString("yyyyMMddHHmmssffff");
-                FileStream fs = new FileStream(LogFolder + "\\SATP_IN" + timeStamp + ".txt", FileMode.CreateNew, FileAccess.Write);
+                FileStream fs = new FileStream(LogFolder + "\\BBOut_IN" + timeStamp + ".txt", FileMode.CreateNew, FileAccess.Write);
                 StreamWriter sw = new StreamWriter(fs);
                 sw.WriteLine(dateTime);
                 int AffectedFileCount = 0;
@@ -376,7 +380,7 @@ namespace OpusRTGS
                     sw.WriteLine("Can't find the folders. Please Communicat with Opus Team.");
                 }
 
-                Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For SATP To Inbound");
+                Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For BBOut To Input");
 
                 sw.WriteLine(AffectedFileCount.ToString() + ", Files Affected");
                 sw.Flush();
@@ -386,8 +390,7 @@ namespace OpusRTGS
             catch (Exception e)
             {
                 Console.WriteLine("Can't Create Log File Or Database Connection fail, Operation Ignored");
-                Console.WriteLine(e.Message);
-                //If you are here the user clicked decline to grant admin privileges (or he's not administrator)
+                Console.WriteLine(e.Message);    
             }
         }
     }
@@ -543,5 +546,10 @@ namespace OpusRTGS
                 Console.WriteLine(e.Message);
             }
         }
+    }
+
+    public class SATPStatusUpdate
+    {
+        //private readonly 
     }
 }
