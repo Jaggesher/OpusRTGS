@@ -21,9 +21,9 @@ namespace OpusRTGS
                 {
                     Console.WriteLine("Executing...........");
 
-                     rtgsRead.Run();
-                     rtgsInbound.Run();
-                     bbOutBoundData.Run();
+                    rtgsRead.Run();
+                    rtgsInbound.Run();
+                    bbOutBoundData.Run();
 
                     //rtgsStatusUpdate.Run();
 
@@ -390,7 +390,7 @@ namespace OpusRTGS
             catch (Exception e)
             {
                 Console.WriteLine("Can't Create Log File Or Database Connection fail, Operation Ignored");
-                Console.WriteLine(e.Message);    
+                Console.WriteLine(e.Message);
             }
         }
     }
@@ -550,6 +550,125 @@ namespace OpusRTGS
 
     public class SATPStatusUpdate
     {
-        //private readonly 
+        private readonly string SourceFolderErr;
+        private readonly string SourceFolderAck;
+        private readonly string BackupFolder;
+        private readonly string LogFolder;
+        private readonly string ConnectionString;
+
+        public SATPStatusUpdate()
+        {
+            //Testing...
+            SourceFolderErr = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Err";
+            SourceFolderAck = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Ack";
+            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\Backup";
+            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATPStatus";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+
+            //Deploy...
+            //SourceFolderErr = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\From";
+            //SourceFolderAck = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\To";
+            //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\Backup";
+            //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\BBOutBound_SATP";
+            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+        }
+
+        public void Run()
+        {
+            try
+            {
+                DateTime dateTime = DateTime.Now;
+                string timeStamp = dateTime.ToString("yyyyMMddHHmmssffff");
+                FileStream fs = new FileStream(LogFolder + "\\SATP_Status" + timeStamp + ".txt", FileMode.CreateNew, FileAccess.Write);
+                StreamWriter sw = new StreamWriter(fs);
+                sw.WriteLine(dateTime);
+                int AffectedFileCount = 0;
+                if (Directory.Exists(SourceFolderAck) && Directory.Exists(SourceFolderErr) && Directory.Exists(BackupFolder))
+                {
+                    using (SqlConnection connection = new SqlConnection(ConnectionString))
+                    {
+                        DirectoryInfo infoAck = new DirectoryInfo(SourceFolderAck);
+                        FileInfo[] Ackfiles = infoAck.GetFiles().ToArray();
+
+                        DirectoryInfo infoErr = new DirectoryInfo(SourceFolderAck);
+                        FileInfo[] Errfiles = infoAck.GetFiles().ToArray();
+
+                        if (Ackfiles.Count() > 0)
+                        {
+                            foreach (FileInfo file in Ackfiles)
+                            {
+                                if (!File.Exists(BackupFolder + "//" + file.Name))
+                                {
+                                    try
+                                    {
+                                        File.Copy(file.FullName, BackupFolder + "\\" + file.Name, true);
+                                        sw.WriteLine(file.FullName);
+
+                                        //Aditional Logic
+
+                                        AffectedFileCount++;
+                                    }
+                                    catch (IOException e)
+                                    {
+                                        sw.WriteLine(e.Message);
+                                        Console.WriteLine(e.Message);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            sw.WriteLine("Empty | No files in SATP acknowledge folder");
+                        }
+
+                        if (Errfiles.Count() > 0)
+                        {
+                            foreach (FileInfo file in Errfiles)
+                            {
+                                if (!File.Exists(BackupFolder + "//" + file.Name))
+                                {
+                                    try
+                                    {
+                                        File.Copy(file.FullName, BackupFolder + "\\" + file.Name, true);
+                                        sw.WriteLine(file.FullName);
+
+                                        //Aditional Logic
+
+                                        AffectedFileCount++;
+                                    }
+                                    catch (IOException e)
+                                    {
+                                        sw.WriteLine(e.Message);
+                                        Console.WriteLine(e.Message);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            sw.WriteLine("Empty | No files in SATP err folder");
+                        }
+
+                    }
+                }
+                else
+                {
+                    sw.WriteLine("Can't find the folders. Please Communicat with Opus Team.");
+                }
+
+                Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For SATP Status Update");
+
+                sw.WriteLine(AffectedFileCount.ToString() + ", Files Affected");
+                sw.Flush();
+                sw.Close();
+                fs.Close();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Can't Create Log File Or Database Connection fail, SATP Status Update Operation Ignored");
+                Console.WriteLine(e.Message);
+            }
+        }
+
     }
 }
