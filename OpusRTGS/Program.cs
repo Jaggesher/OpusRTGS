@@ -3,6 +3,7 @@ using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Xml;
 
 namespace OpusRTGS
 {
@@ -16,16 +17,19 @@ namespace OpusRTGS
                 RTGSInbound rtgsInbound = new RTGSInbound();
                 BBOutBoundData bbOutBoundData = new BBOutBoundData();
                 RTGSStatusUpdate rtgsStatusUpdate = new RTGSStatusUpdate();
+                SATPStatusUpdate stapStatusUpdate = new SATPStatusUpdate();
 
                 while (true)
                 {
                     Console.WriteLine("Executing...........");
 
-                    rtgsRead.Run();
-                    rtgsInbound.Run();
-                    bbOutBoundData.Run();
+                    //rtgsRead.Run();
+                    //rtgsInbound.Run();
+                    //bbOutBoundData.Run();
 
                     //rtgsStatusUpdate.Run();
+
+                    stapStatusUpdate.Run();
 
                     Console.WriteLine(".....DONE......");
                     Console.WriteLine("-------------------------------------------------------------------------------\n");
@@ -555,13 +559,14 @@ namespace OpusRTGS
         private readonly string BackupFolder;
         private readonly string LogFolder;
         private readonly string ConnectionString;
+        private readonly XmlDocument xmlDoc;
 
         public SATPStatusUpdate()
         {
             //Testing...
             SourceFolderErr = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Err";
             SourceFolderAck = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Ack";
-            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\Backup";
+            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Backup";
             LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATPStatus";
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
 
@@ -571,6 +576,9 @@ namespace OpusRTGS
             //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\Backup";
             //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\BBOutBound_SATP";
             //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+
+            xmlDoc = new XmlDocument();
+
         }
 
         public void Run()
@@ -587,11 +595,10 @@ namespace OpusRTGS
                 {
                     using (SqlConnection connection = new SqlConnection(ConnectionString))
                     {
-                        DirectoryInfo infoAck = new DirectoryInfo(SourceFolderAck);
-                        FileInfo[] Ackfiles = infoAck.GetFiles().ToArray();
+                        connection.Open();
 
-                        DirectoryInfo infoErr = new DirectoryInfo(SourceFolderAck);
-                        FileInfo[] Errfiles = infoAck.GetFiles().ToArray();
+                        DirectoryInfo infoAck = new DirectoryInfo(SourceFolderAck);
+                        FileInfo[] Ackfiles = infoAck.GetFiles().ToArray();       
 
                         if (Ackfiles.Count() > 0)
                         {
@@ -604,6 +611,31 @@ namespace OpusRTGS
                                         File.Copy(file.FullName, BackupFolder + "\\" + file.Name, true);
                                         sw.WriteLine(file.FullName);
 
+                                        xmlDoc.Load(file.FullName);
+                                        string resultData = "N/A";
+
+                                        XmlNodeList elemListMIR = xmlDoc.GetElementsByTagName("MIR");
+                                        if (elemListMIR.Count > 0) resultData += elemListMIR[0].InnerText;
+                                        resultData += ",";
+                                        XmlNodeList elemListSignature = xmlDoc.GetElementsByTagName("Signature");
+                                        if (elemListSignature.Count > 0) resultData += elemListSignature[0].InnerText;
+                                        else resultData += "N/A";
+
+                                        string NormalizeFileName = Path.GetFileNameWithoutExtension(file.Name);
+                                        string[] SplitFileName = NormalizeFileName.Split('_');
+                                        if (SplitFileName[1] == "BB")
+                                        {
+                                            string Tmp = $"UPDATE RTGS SET BBTraNumber = '{resultData}', BBErrDescription = 'N/A', BBTrStatus = '1' WHERE XMLFileName = '{NormalizeFileName}'";
+                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                            cmd.ExecuteScalar();
+                                        }
+                                        else if (SplitFileName[1] == "Return")
+                                        {
+                                            string Tmp = $"UPDATE InwordReturn SET TrStatus = '1', TrNumber = '{resultData}', ErrDescription='N/A' WHERE RFIleName = '{NormalizeFileName}'";
+                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                            cmd.ExecuteScalar();
+                                        }
+                                                                             
                                         //Aditional Logic
 
                                         AffectedFileCount++;
@@ -621,6 +653,11 @@ namespace OpusRTGS
                             sw.WriteLine("Empty | No files in SATP acknowledge folder");
                         }
 
+
+
+                        DirectoryInfo infoErr = new DirectoryInfo(SourceFolderErr);
+                        FileInfo[] Errfiles = infoErr.GetFiles().ToArray();
+
                         if (Errfiles.Count() > 0)
                         {
                             foreach (FileInfo file in Errfiles)
@@ -631,6 +668,27 @@ namespace OpusRTGS
                                     {
                                         File.Copy(file.FullName, BackupFolder + "\\" + file.Name, true);
                                         sw.WriteLine(file.FullName);
+                                        char[] CharsToTrim = { '\'', '"' };
+                                        string ErrMessage = File.ReadLines(file.FullName).First();
+                                        ErrMessage = ErrMessage.Replace("'", " ");
+                                                           
+                                        string NormalizeFileName = Path.GetFileNameWithoutExtension(file.Name);
+                                        string[] SplitFileName = NormalizeFileName.Split('_');
+
+                                        if (SplitFileName[1] == "BB")
+                                        {
+                                            string Tmp = $"UPDATE RTGS SET BBTraNumber = 'N/A', BBErrDescription = '{ErrMessage}', BBTrStatus = '-1' WHERE XMLFileName = '{NormalizeFileName}'";
+                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                            cmd.ExecuteScalar();
+                                            
+
+                                        }
+                                        else if (SplitFileName[1] == "Return")
+                                        {
+                                            string Tmp = $"UPDATE InwordReturn SET TrStatus = '-1', TrNumber = 'N/A', ErrDescription='{ErrMessage}' WHERE RFIleName = '{NormalizeFileName}'";
+                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                            cmd.ExecuteScalar();
+                                        }
 
                                         //Aditional Logic
 
@@ -669,6 +727,5 @@ namespace OpusRTGS
                 Console.WriteLine(e.Message);
             }
         }
-
     }
 }
