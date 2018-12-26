@@ -571,11 +571,11 @@ namespace OpusRTGS
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
 
             //Deploy...
-            //SourceFolderErr = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\From";
-            //SourceFolderAck = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\To";
-            //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\Backup";
-            //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\BBOutBound_SATP";
-            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            //SourceFolderErr = @"D:\distr_STPAdapter_v21_36\error";
+            //SourceFolderAck = @"D:\distr_STPAdapter_v21_36\accepted";
+            //BackupFolder = @"D:\RTGSFiles\SATPStatusUpdateBackup";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\SATPStatusUpdate";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
 
             xmlDoc = new XmlDocument();
 
@@ -598,7 +598,7 @@ namespace OpusRTGS
                         connection.Open();
 
                         DirectoryInfo infoAck = new DirectoryInfo(SourceFolderAck);
-                        FileInfo[] Ackfiles = infoAck.GetFiles().ToArray();       
+                        FileInfo[] Ackfiles = infoAck.GetFiles().ToArray();
 
                         if (Ackfiles.Count() > 0)
                         {
@@ -615,7 +615,7 @@ namespace OpusRTGS
                                         string resultData = "N/A";
 
                                         XmlNodeList elemListMIR = xmlDoc.GetElementsByTagName("MIR");
-                                        if (elemListMIR.Count > 0) resultData += elemListMIR[0].InnerText;
+                                        if (elemListMIR.Count > 0) resultData = elemListMIR[0].InnerText;
                                         resultData += ",";
                                         XmlNodeList elemListSignature = xmlDoc.GetElementsByTagName("Signature");
                                         if (elemListSignature.Count > 0) resultData += elemListSignature[0].InnerText;
@@ -623,19 +623,19 @@ namespace OpusRTGS
 
                                         string NormalizeFileName = Path.GetFileNameWithoutExtension(file.Name);
                                         string[] SplitFileName = NormalizeFileName.Split('_');
-                                        if (SplitFileName[1] == "BB")
+                                        if (SplitFileName.Length > 1 && SplitFileName[1] == "BB")
                                         {
-                                            string Tmp = $"UPDATE RTGS SET BBTraNumber = '{resultData}', BBErrDescription = 'N/A', BBTrStatus = '1' WHERE XMLFileName = '{NormalizeFileName}'";
+                                            string Tmp = $"UPDATE RTGS SET BBTraNumber = '{resultData}', BBErrDescription = 'N/A', BBTrStatus = '1' WHERE BBFileName = '{NormalizeFileName}'";
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             cmd.ExecuteScalar();
                                         }
-                                        else if (SplitFileName[1] == "Return")
+                                        else if (SplitFileName.Length > 1 && SplitFileName[1] == "Return")
                                         {
                                             string Tmp = $"UPDATE InwordReturn SET TrStatus = '1', TrNumber = '{resultData}', ErrDescription='N/A' WHERE RFIleName = '{NormalizeFileName}'";
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             cmd.ExecuteScalar();
                                         }
-                                                                             
+
                                         //Aditional Logic
 
                                         AffectedFileCount++;
@@ -671,19 +671,19 @@ namespace OpusRTGS
                                         char[] CharsToTrim = { '\'', '"' };
                                         string ErrMessage = File.ReadLines(file.FullName).First();
                                         ErrMessage = ErrMessage.Replace("'", " ");
-                                                           
+
                                         string NormalizeFileName = Path.GetFileNameWithoutExtension(file.Name);
                                         string[] SplitFileName = NormalizeFileName.Split('_');
 
-                                        if (SplitFileName[1] == "BB")
+                                        if (SplitFileName.Length > 1 && SplitFileName[1] == "BB")
                                         {
-                                            string Tmp = $"UPDATE RTGS SET BBTraNumber = 'N/A', BBErrDescription = '{ErrMessage}', BBTrStatus = '-1' WHERE XMLFileName = '{NormalizeFileName}'";
+                                            string Tmp = $"UPDATE RTGS SET BBTraNumber = 'N/A', BBErrDescription = '{ErrMessage}', BBTrStatus = '-1' WHERE BBFileName = '{NormalizeFileName}'";
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             cmd.ExecuteScalar();
-                                            
+
 
                                         }
-                                        else if (SplitFileName[1] == "Return")
+                                        else if (SplitFileName.Length > 1 && SplitFileName[1] == "Return")
                                         {
                                             string Tmp = $"UPDATE InwordReturn SET TrStatus = '-1', TrNumber = 'N/A', ErrDescription='{ErrMessage}' WHERE RFIleName = '{NormalizeFileName}'";
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
