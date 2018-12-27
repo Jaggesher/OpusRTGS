@@ -19,7 +19,7 @@ namespace OpusRTGS
                 BBOutBoundData bbOutBoundData = new BBOutBoundData();
                 RTGSStatusUpdate rtgsStatusUpdate = new RTGSStatusUpdate();
                 SATPStatusUpdate stapStatusUpdate = new SATPStatusUpdate();
-                
+
                 while (true)
                 {
                     Console.WriteLine("Executing...........");
@@ -32,7 +32,7 @@ namespace OpusRTGS
 
                     //rtgsStatusUpdate.Run();
 
-                    //stapStatusUpdate.Run();
+                    stapStatusUpdate.Run();
 
                     Console.WriteLine(".....DONE......");
                     Console.WriteLine("-------------------------------------------------------------------------------\n");
@@ -413,18 +413,18 @@ namespace OpusRTGS
         public RTGSReturn()
         {
             //Testing...
-            //SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\From";
-            //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\Backup";
-            //DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\To";
-            //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\Return_IN";
-            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\From";
+            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\Backup";
+            DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\To";
+            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\Return_IN";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
 
             //Deploy...
-            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\ReturnInBound";
-            BackupFolder = @"D:\RTGSFiles\ReturnInboundToInput";
-            DestinationFolder = @"D:\distr_STPAdapter_v21_36\input";
-            LogFolder = @"D:\RTGSFiles\LogFiles\ReturnInboundToInput";
-            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\ReturnInBound";
+            //BackupFolder = @"D:\RTGSFiles\ReturnInboundToInput";
+            //DestinationFolder = @"D:\distr_STPAdapter_v21_36\input";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\ReturnInboundToInput";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
 
         }
 
@@ -434,7 +434,8 @@ namespace OpusRTGS
             {
                 DateTime dateTime = DateTime.Now;
                 string timeStamp = dateTime.ToString("yyyyMMddHHmmssffff");
-                FileStream fs = new FileStream(LogFolder + "\\Return_IN" + timeStamp + ".txt", FileMode.CreateNew, FileAccess.Write);
+                string LogFileName = LogFolder + "\\Return_IN" + timeStamp + ".txt";
+                FileStream fs = new FileStream(LogFileName, FileMode.CreateNew, FileAccess.Write);
                 StreamWriter sw = new StreamWriter(fs);
                 sw.WriteLine(dateTime);
                 int AffectedFileCount = 0;
@@ -505,6 +506,11 @@ namespace OpusRTGS
                 sw.Flush();
                 sw.Close();
                 fs.Close();
+
+                if (File.Exists(LogFileName) && AffectedFileCount == 0)
+                {
+                    File.Delete(LogFileName);
+                }
             }
             catch (Exception e)
             {
@@ -656,7 +662,8 @@ namespace OpusRTGS
             {
                 DateTime dateTime = DateTime.Now;
                 string timeStamp = dateTime.ToString("yyyyMMddHHmmssffff");
-                FileStream fs = new FileStream(LogFolder + "\\SATP_Status" + timeStamp + ".txt", FileMode.CreateNew, FileAccess.Write);
+                string LogFileName = LogFolder + "\\SATP_Status" + timeStamp + ".txt";
+                FileStream fs = new FileStream(LogFileName, FileMode.CreateNew, FileAccess.Write);
                 StreamWriter sw = new StreamWriter(fs);
                 sw.WriteLine(dateTime);
                 int AffectedFileCount = 0;
@@ -749,8 +756,6 @@ namespace OpusRTGS
                                             string Tmp = $"UPDATE RTGS SET BBTraNumber = 'N/A', BBErrDescription = '{ErrMessage}', BBTrStatus = '-1' WHERE BBFileName = '{NormalizeFileName}'";
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             cmd.ExecuteScalar();
-
-
                                         }
                                         else if (SplitFileName.Length > 1 && SplitFileName[1] == "Return")
                                         {
@@ -789,6 +794,12 @@ namespace OpusRTGS
                 sw.Flush();
                 sw.Close();
                 fs.Close();
+
+                if (File.Exists(LogFileName) && AffectedFileCount == 0)
+                {
+                    File.Delete(LogFileName);
+                }
+
             }
             catch (Exception e)
             {
