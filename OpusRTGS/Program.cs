@@ -14,11 +14,12 @@ namespace OpusRTGS
             try
             {
                 RTGSRead rtgsRead = new RTGSRead();
+                RTGSReturn rtgsReturn = new RTGSReturn();
                 RTGSInbound rtgsInbound = new RTGSInbound();
                 BBOutBoundData bbOutBoundData = new BBOutBoundData();
                 RTGSStatusUpdate rtgsStatusUpdate = new RTGSStatusUpdate();
                 SATPStatusUpdate stapStatusUpdate = new SATPStatusUpdate();
-
+                
                 while (true)
                 {
                     Console.WriteLine("Executing...........");
@@ -27,9 +28,11 @@ namespace OpusRTGS
                     //rtgsInbound.Run();
                     //bbOutBoundData.Run();
 
+                    rtgsReturn.Run();
+
                     //rtgsStatusUpdate.Run();
 
-                    stapStatusUpdate.Run();
+                    //stapStatusUpdate.Run();
 
                     Console.WriteLine(".....DONE......");
                     Console.WriteLine("-------------------------------------------------------------------------------\n");
@@ -401,46 +404,112 @@ namespace OpusRTGS
 
     public class RTGSReturn
     {
-        private readonly string bat;
-        private ProcessStartInfo psi;
-        private Process process;
+        private readonly string SourceFolder;
+        private readonly string BackupFolder;
+        private readonly string DestinationFolder;
+        private readonly string LogFolder;
+        private readonly string ConnectionString;
+
         public RTGSReturn()
         {
-            try
-            {
-                //Test..
-                bat = @"D:\OpusBatch\RTGS_Return.bat";
+            //Testing...
+            //SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\From";
+            //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\Backup";
+            //DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\To";
+            //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\Return_IN";
+            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
 
-                //Deploy..
-                //bat = @"D:\OpusBatch\RTGS_Return.bat";
+            //Deploy...
+            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\ReturnInBound";
+            BackupFolder = @"D:\RTGSFiles\ReturnInboundToInput";
+            DestinationFolder = @"D:\distr_STPAdapter_v21_36\input";
+            LogFolder = @"D:\RTGSFiles\LogFiles\ReturnInboundToInput";
+            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
 
-                psi = new ProcessStartInfo();
-                process = new Process();
-                psi.CreateNoWindow = true; //This hides the dos-style black window that the command prompt usually shows
-                psi.FileName = @"cmd.exe";
-                psi.UseShellExecute = false;
-                psi.Verb = "runas"; //This is what actually runs the command as administrator
-                psi.Arguments = "/C " + bat;
-                process.StartInfo = psi;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Error For RTGS Read Constructor.");
-                Console.WriteLine(e.Message);
-            }
         }
+
         public void Run()
         {
             try
             {
-                process.Start();
-                process.WaitForExit();
+                DateTime dateTime = DateTime.Now;
+                string timeStamp = dateTime.ToString("yyyyMMddHHmmssffff");
+                FileStream fs = new FileStream(LogFolder + "\\Return_IN" + timeStamp + ".txt", FileMode.CreateNew, FileAccess.Write);
+                StreamWriter sw = new StreamWriter(fs);
+                sw.WriteLine(dateTime);
+                int AffectedFileCount = 0;
+                if (Directory.Exists(SourceFolder) && Directory.Exists(DestinationFolder) && Directory.Exists(BackupFolder))
+                {
+                    DirectoryInfo info = new DirectoryInfo(SourceFolder);
+                    FileInfo[] files = info.GetFiles("*.xml").ToArray();
+
+                    if (files.Count() != 0)
+                    {
+                        using (SqlConnection connection = new SqlConnection(ConnectionString))
+                        {
+                            connection.Open();
+                            foreach (FileInfo file in files)
+                            {
+                                if (File.Exists(file.FullName))
+                                {
+                                    sw.Write(file.FullName);
+                                    try
+                                    {
+                                        File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
+                                        sw.Write(" | Coppied  successfully | ");
+                                        if (File.Exists(BackupFolder + "\\" + file.Name))
+                                        {
+                                            File.Delete(BackupFolder + "\\" + file.Name);
+                                            sw.Write("Duplicate Name | ");
+                                        }
+
+                                        File.Move(file.FullName, BackupFolder + "\\" + file.Name);
+                                        sw.Write("Moved successfully");
+                                        sw.WriteLine();
+
+                                        string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
+
+                                        //string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From BBOutBound To SATP Input', '{NormalFileName}')";
+                                        //SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                        //cmd.ExecuteScalar();
+
+                                        AffectedFileCount++;
+
+                                    }
+                                    catch (IOException e)
+                                    {
+                                        sw.WriteLine(e.Message);
+                                        Console.WriteLine(e.Message);
+                                    }
+                                }
+                                else
+                                {
+                                    sw.WriteLine("File Cn't Found");
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        sw.WriteLine("Empty | No Files For Coppy");
+                    }
+                }
+                else
+                {
+                    sw.WriteLine("Can't find the folders. Please Communicat with Opus Team.");
+                }
+
+                Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For Return To Input");
+
+                sw.WriteLine(AffectedFileCount.ToString() + ", Files Affected");
+                sw.Flush();
+                sw.Close();
+                fs.Close();
             }
             catch (Exception e)
             {
-                Console.WriteLine("Shouldn't Open as administrator");
+                Console.WriteLine("Can't Create Log File Or Database Connection fail, Operation Ignored");
                 Console.WriteLine(e.Message);
-                //If you are here the user clicked decline to grant admin privileges (or he's not administrator)
             }
         }
     }
