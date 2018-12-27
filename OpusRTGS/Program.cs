@@ -728,4 +728,40 @@ namespace OpusRTGS
             }
         }
     }
+
+    public class SealXmlFile
+    {
+        private readonly XmlDocument xmlDoc;
+        private static SealXmlFile instance = new SealXmlFile();
+
+        private SealXmlFile()
+        {
+            xmlDoc = new XmlDocument();
+        }
+
+        public string SealXml(string FileFullPath)
+        {
+            try
+            {
+                xmlDoc.Load(FileFullPath);
+                XmlElement record = xmlDoc.CreateElement("ABL_Opus");
+                record.SetAttribute("type", "General Status.");
+                record.InnerText = "Posted-" + DateTime.Now;
+                xmlDoc.DocumentElement.AppendChild(record);
+                xmlDoc.Save(FileFullPath);
+                return "Success";
+            }
+            catch (XmlException e)
+            {
+                Console.WriteLine("Error from xml seal Operation.");
+                Console.WriteLine(e.Message);
+                return "Fail";
+            }
+        }
+
+        public static SealXmlFile getInstance()
+        {
+            return instance;
+        }
+    }
 }
