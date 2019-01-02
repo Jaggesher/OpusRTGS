@@ -24,15 +24,15 @@ namespace OpusRTGS
                 {
                     Console.WriteLine("Executing...........");
 
-                    rtgsRead.Run();
-                    rtgsInbound.Run();
-                    bbOutBoundData.Run();
+                    // rtgsRead.Run();
+                    // rtgsInbound.Run();
+                    //bbOutBoundData.Run();
 
-                   // rtgsReturn.Run();//In Production.
+                    // rtgsReturn.Run();//In Production.
 
-                    //rtgsStatusUpdate.Run();
+                    rtgsStatusUpdate.Run();
 
-                   // stapStatusUpdate.Run();//In Production
+                    // stapStatusUpdate.Run();//In Production
 
                     Console.WriteLine(".....DONE......");
                     Console.WriteLine("-------------------------------------------------------------------------------\n");
@@ -539,9 +539,10 @@ namespace OpusRTGS
 
     public class RTGSStatusUpdate
     {
-        private readonly string LogFile;
+        private readonly string LogFolder;
+        private readonly string BackupFolder;
         private readonly string ConnectionString;
-        private readonly string sourceFolder;
+        private readonly string SourceFolder;
 
         public RTGSStatusUpdate()
         {
@@ -550,95 +551,137 @@ namespace OpusRTGS
             //LogFile = @"D:\BackUpRTGSInWordLogFiles\RTGSStatusLog.txt";
             //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             //sourceFolder = @"X:\AGR.WRITE";//Assuming Test is your Folder
+            //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\backup";
 
-            //Testing... 
-            LogFile = @"D:\Opus\Development\Jogessor\RTGSStatusLog.txt";
+            //Testing...  
+            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\RTGSStatus";
             ConnectionString = @"Data Source=DESKTOP-ALPFNNL;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
-            sourceFolder = @"D:\Opus\Development\Jogessor\AGR.WRITE";//Assuming Test is your Folder
+            SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\Source";//Assuming Test is your Folder
+            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\backup";
 
         }
 
         public void Run()
         {
-            string flag = "success";
-
             try
             {
-                // Connect to SQL
-                using (SqlConnection connection = new SqlConnection(ConnectionString))
+                DateTime dateTime = DateTime.Now;
+                string timeStamp = dateTime.ToString("yyyyMMddHHmmssffff");
+                string LogFileName = LogFolder + "\\T24Status" + timeStamp + ".txt";
+                FileStream fs = new FileStream(LogFileName, FileMode.CreateNew, FileAccess.Write);
+                StreamWriter sw = new StreamWriter(fs);
+                sw.WriteLine(dateTime);
+                int AffectedFileCount = 0;
+                if (Directory.Exists(SourceFolder) && Directory.Exists(BackupFolder))
                 {
-                    connection.Open();
-                    string FileName, TranNumber, Status, ErrMessage;
-                    DirectoryInfo d = new DirectoryInfo(sourceFolder);
-                    FileInfo[] Files = d.GetFiles("*.xml"); //Getting Text files
+                    DirectoryInfo info = new DirectoryInfo(SourceFolder);
+                    FileInfo[] files = info.GetFiles().ToArray();
 
-                    foreach (FileInfo file in Files)
+                    if (files.Count() != 0)
                     {
-                        FileName = file.Name;
-                        TranNumber = "N/A";
-                        Status = "N/A";
-                        ErrMessage = "N/A";
-
-                        string content = File.ReadAllText(file.FullName);
-
-                        string[] contents = content.Split(',');
-
-                        if (contents.Length > 0)
+                        using (SqlConnection connection = new SqlConnection(ConnectionString))
                         {
-                            //First TRAN NUmber
-                            TranNumber = contents[0];
-
-                            string[] FirstFields = contents[0].Split('/');
-
-                            //Status Code
-                            Status = FirstFields[2];
-
-                            if (FirstFields[2] != "1")
+                            connection.Open();
+                            string FileName, TranNumber, Status, ErrMessage;
+                            foreach (FileInfo file in files)
                             {
-                                //Error Message
-                                ErrMessage = contents[1];
+                                if (File.Exists(file.FullName))
+                                {
+                                    try
+                                    {
+                                        if (!File.Exists(BackupFolder + "\\" + file.Name))
+                                        {
+                                            FileName = file.Name;
+                                            TranNumber = "N/A";
+                                            Status = "N/A";
+                                            ErrMessage = "N/A";
+
+                                            string content = File.ReadAllText(file.FullName);
+
+                                            string[] contents = content.Split(',');
+
+                                            if (contents.Length > 0)
+                                            {
+                                                //First TRAN NUmber
+                                                TranNumber = contents[0];
+                                                string[] FirstFields = contents[0].Split('/');
+
+                                                //Status Code
+                                                Status = FirstFields[2];
+                                                if (FirstFields[2] != "1")
+                                                {
+                                                    //Error Message
+                                                    ErrMessage = contents[1];
+                                                }
+                                            }
+
+                                            string NormalFileName = Path.GetFileNameWithoutExtension(FileName);
+                                            string[] SplitFileName = NormalFileName.Split('_');
+
+                                            if (SplitFileName[1] == "I")
+                                            {
+                                                string Tmp = $"UPDATE dbo.XMLDataUpload SET TraNumber = '{TranNumber}', TrStatus = '{Status}', ErrDescription = '{ErrMessage}' WHERE XMLFileName = '{NormalFileName}'";
+                                                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                                cmd.ExecuteScalar();
+
+                                                // Console.WriteLine("I");
+                                            }
+                                            else if (SplitFileName[1] == "TT")
+                                            {
+                                                string Tmp = $"UPDATE dbo.RTGS SET TraNumber = '{TranNumber}', TrStatus = '{Status}', ErrDescription = '{ErrMessage}' WHERE XMLFileName = '{FileName}'";
+                                                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                                cmd.ExecuteScalar();
+
+                                                // Console.WriteLine("TT");
+                                            }
+
+                                            sw.Write(file.FullName);
+                                            File.Copy(file.FullName, BackupFolder + "\\" + file.Name, true);
+                                            sw.Write(" | Updated successfully");
+                                            sw.WriteLine();
+
+                                            AffectedFileCount++;
+                                        }
+
+                                    }
+                                    catch (IOException e)
+                                    {
+                                        sw.WriteLine(e.Message);
+                                        Console.WriteLine(e.Message);
+                                    }
+                                }
+                                else
+                                {
+                                    sw.WriteLine("File Cn't Found");
+                                }
                             }
-
                         }
-
-                        string NormalFileName = Path.GetFileNameWithoutExtension(FileName);
-                        string[] SplitFileName = NormalFileName.Split('_');
-
-                        if (SplitFileName[1] == "I")
-                        {
-                            string Tmp = $"UPDATE dbo.XMLDataUpload SET TraNumber = '{TranNumber}', TrStatus = '{Status}', ErrDescription = '{ErrMessage}' WHERE XMLFileName = '{NormalFileName}'";
-                            SqlCommand cmd = new SqlCommand(Tmp, connection);
-                            cmd.ExecuteScalar();
-                            // Console.WriteLine("I");
-                        }
-                        else if (SplitFileName[1] == "O" || SplitFileName[1] == "TT")
-                        {
-                            string Tmp = $"UPDATE dbo.RTGS SET TraNumber = '{TranNumber}', TrStatus = '{Status}', ErrDescription = '{ErrMessage}' WHERE XMLFileName = '{NormalFileName}'";
-                            SqlCommand cmd = new SqlCommand(Tmp, connection);
-                            cmd.ExecuteScalar();
-                            //Console.WriteLine("O");
-                        }
-
+                    }
+                    else
+                    {
+                        sw.WriteLine("Empty | No Files For Coppy");
                     }
                 }
-            }
-            catch (SqlException e)
-            {
-                flag = e.ToString();
-                //Console.WriteLine(e.ToString());
-            }
-            try
-            {
-                FileStream fs = new FileStream(LogFile, FileMode.Append, FileAccess.Write);
-                StreamWriter sw = new StreamWriter(fs);
-                sw.WriteLine(DateTime.Now + " | " + flag);
-                Console.WriteLine(DateTime.Now + " | " + flag);
+                else
+                {
+                    sw.WriteLine("Can't find the folders. Please Communicat with Opus Team.");
+                }
+
+                Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For T24 Status Update");
+
+                sw.WriteLine(AffectedFileCount.ToString() + ", Files Affected");
                 sw.Flush();
                 sw.Close();
                 fs.Close();
+
+                if (File.Exists(LogFileName) && AffectedFileCount == 0)
+                {
+                    File.Delete(LogFileName);
+                }
             }
             catch (Exception e)
             {
+                Console.WriteLine("Can't Create Log File Or Database Connection fail, Operation Ignored");
                 Console.WriteLine(e.Message);
             }
         }
