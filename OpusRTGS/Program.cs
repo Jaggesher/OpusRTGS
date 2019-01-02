@@ -636,6 +636,18 @@ namespace OpusRTGS
                                                 SqlCommand cmd = new SqlCommand(Tmp, connection);
                                                 cmd.ExecuteScalar();
 
+                                                SqlCommand cmdTm = new SqlCommand("spLogInward", connection);
+                                                cmdTm.CommandType = CommandType.StoredProcedure;
+                                                cmdTm.Parameters.AddWithValue("@fileName", NormalFileName);
+                                                if(Status == "1")
+                                                {
+                                                    cmdTm.Parameters.AddWithValue("@Remarks ", "Success");
+                                                }else
+                                                {
+                                                    cmdTm.Parameters.AddWithValue("@Remarks ", "Transiction Fail");
+                                                }
+                                                cmdTm.ExecuteScalar();
+
                                                 // Console.WriteLine("I");
                                             }
                                             else if (SplitFileName[1] == "TT")
