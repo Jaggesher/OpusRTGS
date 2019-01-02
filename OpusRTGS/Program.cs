@@ -25,15 +25,17 @@ namespace OpusRTGS
                 {
                     Console.WriteLine("Executing...........");
 
-                    // rtgsRead.Run();
-                    // rtgsInbound.Run();
-                    // bbOutBoundData.Run();
+                    #region Operations
+                    rtgsRead.Run();
+                    rtgsInbound.Run();
+                    bbOutBoundData.Run();
 
-                    // rtgsReturn.Run();//In Production.
+                    rtgsReturn.Run();//In Production.
 
                     rtgsStatusUpdate.Run();
 
-                    // stapStatusUpdate.Run();//In Production
+                    stapStatusUpdate.Run();//In Production
+                    #endregion
 
                     Console.WriteLine(".....DONE......");
                     Console.WriteLine("-------------------------------------------------------------------------------\n");
@@ -494,9 +496,9 @@ namespace OpusRTGS
 
                                         string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
 
-                                        //string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From BBOutBound To SATP Input', '{NormalFileName}')";
-                                        //SqlCommand cmd = new SqlCommand(Tmp, connection);
-                                        //cmd.ExecuteScalar();
+                                        string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From BBOutBound To SATP Input', '{NormalFileName}')";
+                                        SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                        cmd.ExecuteScalar();
 
                                         AffectedFileCount++;
 
@@ -642,14 +644,14 @@ namespace OpusRTGS
                                                 SqlCommand cmd = new SqlCommand(Tmp, connection);
                                                 cmd.ExecuteScalar();
 
-                                                SqlCommand cmdTm = new SqlCommand("", connection);
+                                                SqlCommand cmdTm = new SqlCommand("SP_Post_Rtgs_StatusLog_By_Batch", connection);
                                                 cmdTm.CommandType = CommandType.StoredProcedure;
-                                                cmdTm.Parameters.AddWithValue("","");
-
-                                                //cmdTm.Parameters.AddWithValue("@Name", "Jaggesher");
+                                                cmdTm.Parameters.AddWithValue("@FileName", file.Name);
+                                                cmdTm.Parameters.AddWithValue("@StatusID", Status);
+                                                cmdTm.Parameters.AddWithValue("@ProcessType", "TT");
                                                 cmdTm.ExecuteScalar();
 
-                                                // Console.WriteLine("TT");
+                                                Console.WriteLine("TT");
                                             }
 
                                             sw.Write(file.FullName);
@@ -778,17 +780,26 @@ namespace OpusRTGS
 
                                         string NormalizeFileName = Path.GetFileNameWithoutExtension(file.Name);
                                         string[] SplitFileName = NormalizeFileName.Split('_');
+
+                                        SqlCommand cmdTm = new SqlCommand("SP_Post_Rtgs_StatusLog_By_Batch", connection);
+                                        cmdTm.CommandType = CommandType.StoredProcedure;
+                                        cmdTm.Parameters.AddWithValue("@FileName", NormalizeFileName);
+                                        cmdTm.Parameters.AddWithValue("@StatusID", 1);
+                                        cmdTm.Parameters.AddWithValue("@ProcessType", "BB");
+
                                         if (SplitFileName.Length > 1 && SplitFileName[1] == "BB")
                                         {
                                             string Tmp = $"UPDATE RTGS SET BBTraNumber = '{resultData}', BBErrDescription = 'N/A', BBTrStatus = '1' WHERE BBFileName = '{NormalizeFileName}'";
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             cmd.ExecuteScalar();
+                                            cmdTm.ExecuteScalar();
                                         }
                                         else if (SplitFileName.Length > 1 && SplitFileName[1] == "Return")
                                         {
                                             string Tmp = $"UPDATE InwordReturn SET TrStatus = '1', TrNumber = '{resultData}', ErrDescription='N/A' WHERE RFIleName = '{NormalizeFileName}'";
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             cmd.ExecuteScalar();
+                                            cmdTm.ExecuteScalar();
                                         }
 
                                         //Aditional Logic
@@ -830,17 +841,25 @@ namespace OpusRTGS
                                         string NormalizeFileName = Path.GetFileNameWithoutExtension(file.Name);
                                         string[] SplitFileName = NormalizeFileName.Split('_');
 
+                                        SqlCommand cmdTm = new SqlCommand("SP_Post_Rtgs_StatusLog_By_Batch", connection);
+                                        cmdTm.CommandType = CommandType.StoredProcedure;
+                                        cmdTm.Parameters.AddWithValue("@FileName", NormalizeFileName);
+                                        cmdTm.Parameters.AddWithValue("@StatusID", 1);
+                                        cmdTm.Parameters.AddWithValue("@ProcessType", "BB");
+
                                         if (SplitFileName.Length > 1 && SplitFileName[1] == "BB")
                                         {
                                             string Tmp = $"UPDATE RTGS SET BBTraNumber = 'N/A', BBErrDescription = '{ErrMessage}', BBTrStatus = '-1' WHERE BBFileName = '{NormalizeFileName}'";
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             cmd.ExecuteScalar();
+                                            cmdTm.ExecuteScalar();
                                         }
                                         else if (SplitFileName.Length > 1 && SplitFileName[1] == "Return")
                                         {
                                             string Tmp = $"UPDATE InwordReturn SET TrStatus = '-1', TrNumber = 'N/A', ErrDescription='{ErrMessage}' WHERE RFIleName = '{NormalizeFileName}'";
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             cmd.ExecuteScalar();
+                                            cmdTm.ExecuteScalar();
                                         }
 
                                         //Aditional Logic
