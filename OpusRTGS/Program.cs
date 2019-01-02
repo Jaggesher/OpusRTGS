@@ -26,7 +26,8 @@ namespace OpusRTGS
                     Console.WriteLine("Executing...........");
 
                     #region Operations
-                    rtgsRead.Run();
+
+                    rtgsRead.Run(); 
                     rtgsInbound.Run();
                     bbOutBoundData.Run();
 
@@ -41,7 +42,7 @@ namespace OpusRTGS
                     Console.WriteLine("-------------------------------------------------------------------------------\n");
                     Console.WriteLine("Waiting...........");
 
-                    System.Threading.Thread.Sleep(1 * 10 * 1000);
+                    System.Threading.Thread.Sleep(1 * 60 * 1000);
                 }
             }
             catch (Exception e)
@@ -124,23 +125,26 @@ namespace OpusRTGS
 
                                         string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
                                         string[] SplitFileName = NormalFileName.Split('_');
+                                        string mainFileName = "Can't Find";
+
                                         if (SplitFileName[1] == "TT")
                                         {
-
-                                            //string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From BBOutBound To SATP Input', '{NormalFileName}')";
-                                            //SqlCommand cmd = new SqlCommand(Tmp, connection);
-                                            //cmd.ExecuteScalar();
+                                            string Tmp1 = $"SELECT BBFileName FROM RTGS WHERE XMLFileName = '{file.Name}'";
+                                            SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
+                                            mainFileName = (string)cmd1.ExecuteScalar();
+                                            Console.WriteLine("TT Entry :) ");
                                         }
                                         else
                                         {
                                             string Tmp1 = $"SELECT FileName FROM XMLDataUpload WHERE XMLFileName = '{NormalFileName}'";
                                             SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
-                                            string mainFileName = (string)cmd1.ExecuteScalar();
+                                            mainFileName = (string)cmd1.ExecuteScalar();
 
-                                            string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName, FileName) VALUES(getdate(), 'File Moved From XML To T24 READ', '{NormalFileName}','{mainFileName}')";
-                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
-                                            cmd.ExecuteScalar();
                                         }
+
+                                        string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName, FileName) VALUES(getdate(), 'File Moved From XML To T24 READ', '{NormalFileName}','{mainFileName}')";
+                                        SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                        cmd.ExecuteScalar();
 
                                         AffectedFileCount++;
 
@@ -496,7 +500,7 @@ namespace OpusRTGS
 
                                         string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
 
-                                        string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From BBOutBound To SATP Input', '{NormalFileName}')";
+                                        string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From ReturnInBound To SATP Input', '{NormalFileName}')";
                                         SqlCommand cmd = new SqlCommand(Tmp, connection);
                                         cmd.ExecuteScalar();
 
@@ -639,10 +643,11 @@ namespace OpusRTGS
                                                 SqlCommand cmdTm = new SqlCommand("spLogInward", connection);
                                                 cmdTm.CommandType = CommandType.StoredProcedure;
                                                 cmdTm.Parameters.AddWithValue("@fileName", NormalFileName);
-                                                if(Status == "1")
+                                                if (Status == "1")
                                                 {
                                                     cmdTm.Parameters.AddWithValue("@Remarks ", "Success");
-                                                }else
+                                                }
+                                                else
                                                 {
                                                     cmdTm.Parameters.AddWithValue("@Remarks ", "Transiction Fail");
                                                 }
