@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
@@ -26,7 +27,7 @@ namespace OpusRTGS
 
                     // rtgsRead.Run();
                     // rtgsInbound.Run();
-                    //bbOutBoundData.Run();
+                    // bbOutBoundData.Run();
 
                     // rtgsReturn.Run();//In Production.
 
@@ -60,19 +61,22 @@ namespace OpusRTGS
 
         public RTGSRead()
         {
-            //Testing...
+            #region Testing...
             SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\From";
             BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\Backup";
             DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\To";
             LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            #endregion
 
-            //Deploy...
-            //SourceFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\From";
-            //BackupFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\Backup";
-            //DestinationFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\To";
-            //LogFolder = @"E:\Jaggesher WorkSpace\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
-            //ConnectionString = @"Data Source=DESKTOP-ALPFNNL;Initial Catalog=db_Goldfish;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+
+            #region Deploy...
+            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\xmldata";
+            //BackupFolder = @"D:\RTGSFiles\xmlToREAD";
+            //DestinationFolder = @"X:\AGR.READ";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\xmlToRead";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            #endregion
 
         }
 
@@ -193,20 +197,21 @@ namespace OpusRTGS
 
         public RTGSInbound()
         {
-            //Testing...
+            #region Testing...
             SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATP_IN\From";
             BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATP_IN\Backup";
             DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATP_IN\To";
             LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            #endregion
 
-            //Deploy...
-            //SourceFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\From";
-            //BackupFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\Backup";
-            //DestinationFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\To";
-            //LogFolder = @"E:\Jaggesher WorkSpace\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
-            //ConnectionString = @"Data Source=DESKTOP-ALPFNNL;Initial Catalog=db_Goldfish;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
-
+            #region Deploy...
+            //SourceFolder = @"D:\distr_STPAdapter_v21_36\output";
+            //BackupFolder = @"D:\RTGSFiles\SATPToInbound";
+            //DestinationFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\SATPToInbound";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            #endregion
         }
 
         public void Run()
@@ -312,20 +317,21 @@ namespace OpusRTGS
 
         public BBOutBoundData()
         {
-            //Testing...
+            #region Testing...
             SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\From";
             BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\Backup";
             DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\To";
             LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\BBOutBound_SATP";
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            #endregion
 
-            //Deploy...
-            //SourceFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\From";
-            //BackupFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\Backup";
-            //DestinationFolder = @"E:\Jaggesher WorkSpace\RTGS\SATP_IN\To";
-            //LogFolder = @"E:\Jaggesher WorkSpace\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
-            //ConnectionString = @"Data Source=DESKTOP-ALPFNNL;Initial Catalog=db_Goldfish;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
-
+            #region Deploy...
+            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\BBOutBoundData";
+            //BackupFolder = @"D:\RTGSFiles\BBOutToSATP";
+            //DestinationFolder = @"D:\distr_STPAdapter_v21_36\input";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\BBOutToSATP";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            #endregion
         }
 
         public void Run()
@@ -429,20 +435,21 @@ namespace OpusRTGS
 
         public RTGSReturn()
         {
-            //Testing...
+            #region  Testing...
             SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\From";
             BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\Backup";
             DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\To";
             LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\Return_IN";
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            #endregion
 
-            //Deploy...
+            #region Deploy...
             //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\ReturnInBound";
             //BackupFolder = @"D:\RTGSFiles\ReturnInboundToInput";
             //DestinationFolder = @"D:\distr_STPAdapter_v21_36\input";
             //LogFolder = @"D:\RTGSFiles\LogFiles\ReturnInboundToInput";
             //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
-
+            #endregion
         }
 
         public void Run()
@@ -546,18 +553,21 @@ namespace OpusRTGS
 
         public RTGSStatusUpdate()
         {
-            //Deploy...
 
-            //LogFile = @"D:\BackUpRTGSInWordLogFiles\RTGSStatusLog.txt";
-            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
-            //sourceFolder = @"X:\AGR.WRITE";//Assuming Test is your Folder
-            //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\backup";
-
-            //Testing...  
+            #region Testing...  
             LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\RTGSStatus";
             ConnectionString = @"Data Source=DESKTOP-ALPFNNL;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\Source";//Assuming Test is your Folder
             BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\backup";
+            #endregion
+
+            #region Deploy...
+            //LogFolder = @"D:\RTGSFiles\LogFiles\T24StatusUpdate";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolder = @"X:\AGR.WRITE";//Assuming Test is your Folder
+            //BackupFolder = @"D:\RTGSFiles\T24WriteBackup";
+            #endregion
+
 
         }
 
@@ -632,6 +642,13 @@ namespace OpusRTGS
                                                 SqlCommand cmd = new SqlCommand(Tmp, connection);
                                                 cmd.ExecuteScalar();
 
+                                                SqlCommand cmdTm = new SqlCommand("", connection);
+                                                cmdTm.CommandType = CommandType.StoredProcedure;
+                                                cmdTm.Parameters.AddWithValue("","");
+
+                                                //cmdTm.Parameters.AddWithValue("@Name", "Jaggesher");
+                                                cmdTm.ExecuteScalar();
+
                                                 // Console.WriteLine("TT");
                                             }
 
@@ -698,19 +715,21 @@ namespace OpusRTGS
 
         public SATPStatusUpdate()
         {
-            //Testing...
+            #region Testing...
             SourceFolderErr = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Err";
             SourceFolderAck = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Ack";
             BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Backup";
             LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATPStatus";
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            #endregion
 
-            //Deploy...
+            #region Deploy...
             //SourceFolderErr = @"D:\distr_STPAdapter_v21_36\error";
             //SourceFolderAck = @"D:\distr_STPAdapter_v21_36\accepted";
             //BackupFolder = @"D:\RTGSFiles\SATPStatusUpdateBackup";
             //LogFolder = @"D:\RTGSFiles\LogFiles\SATPStatusUpdate";
             //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            #endregion
 
             xmlDoc = new XmlDocument();
 
