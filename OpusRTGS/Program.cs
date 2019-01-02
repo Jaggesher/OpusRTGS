@@ -24,15 +24,15 @@ namespace OpusRTGS
                 {
                     Console.WriteLine("Executing...........");
 
-                    //rtgsRead.Run();
-                    //rtgsInbound.Run();
-                    //bbOutBoundData.Run();
+                    rtgsRead.Run();
+                    rtgsInbound.Run();
+                    bbOutBoundData.Run();
 
-                    rtgsReturn.Run();
+                   // rtgsReturn.Run();//In Production.
 
                     //rtgsStatusUpdate.Run();
 
-                    stapStatusUpdate.Run();
+                   // stapStatusUpdate.Run();//In Production
 
                     Console.WriteLine(".....DONE......");
                     Console.WriteLine("-------------------------------------------------------------------------------\n");
@@ -82,7 +82,8 @@ namespace OpusRTGS
             {
                 DateTime dateTime = DateTime.Now;
                 string timeStamp = dateTime.ToString("yyyyMMddHHmmssffff");
-                FileStream fs = new FileStream(LogFolder + "\\XML_READ" + timeStamp + ".txt", FileMode.CreateNew, FileAccess.Write);
+                string LogFileName = LogFolder + "\\XML_READ" + timeStamp + ".txt";
+                FileStream fs = new FileStream(LogFileName, FileMode.CreateNew, FileAccess.Write);
                 StreamWriter sw = new StreamWriter(fs);
                 sw.WriteLine(dateTime);
                 int AffectedFileCount = 0;
@@ -167,6 +168,11 @@ namespace OpusRTGS
                 sw.Flush();
                 sw.Close();
                 fs.Close();
+
+                if (File.Exists(LogFileName) && AffectedFileCount == 0)
+                {
+                    File.Delete(LogFileName);
+                }
             }
             catch (Exception e)
             {
@@ -209,7 +215,8 @@ namespace OpusRTGS
             {
                 DateTime dateTime = DateTime.Now;
                 string timeStamp = dateTime.ToString("yyyyMMddHHmmssffff");
-                FileStream fs = new FileStream(LogFolder + "\\SATP_IN" + timeStamp + ".txt", FileMode.CreateNew, FileAccess.Write);
+                string LogFileName = LogFolder + "\\SATP_IN" + timeStamp + ".txt";
+                FileStream fs = new FileStream(LogFileName, FileMode.CreateNew, FileAccess.Write);
                 StreamWriter sw = new StreamWriter(fs);
                 sw.WriteLine(dateTime);
                 int AffectedFileCount = 0;
@@ -280,6 +287,11 @@ namespace OpusRTGS
                 sw.Flush();
                 sw.Close();
                 fs.Close();
+
+                if (File.Exists(LogFileName) && AffectedFileCount == 0)
+                {
+                    File.Delete(LogFileName);
+                }
             }
             catch (Exception e)
             {
@@ -322,7 +334,8 @@ namespace OpusRTGS
             {
                 DateTime dateTime = DateTime.Now;
                 string timeStamp = dateTime.ToString("yyyyMMddHHmmssffff");
-                FileStream fs = new FileStream(LogFolder + "\\BBOut_IN" + timeStamp + ".txt", FileMode.CreateNew, FileAccess.Write);
+                string LogFileName = LogFolder + "\\BBOut_IN" + timeStamp + ".txt";
+                FileStream fs = new FileStream(LogFileName, FileMode.CreateNew, FileAccess.Write);
                 StreamWriter sw = new StreamWriter(fs);
                 sw.WriteLine(dateTime);
                 int AffectedFileCount = 0;
@@ -393,6 +406,10 @@ namespace OpusRTGS
                 sw.Flush();
                 sw.Close();
                 fs.Close();
+                if (File.Exists(LogFileName) && AffectedFileCount == 0)
+                {
+                    File.Delete(LogFileName);
+                }
             }
             catch (Exception e)
             {
