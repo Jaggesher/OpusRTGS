@@ -1020,7 +1020,7 @@ namespace OpusRTGS
                                     {
                                         string Tmp1 = $"Select TOP 1 FileName From InboundDataBatch WHERE FileName = '{file.Name}';";
                                         SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
-                                        string TableFileName = (string)cmd1.ExecuteScalar();  
+                                        string TableFileName = (string)cmd1.ExecuteScalar();
                                         if (TableFileName != null) continue;
                                         doc.Load(file.FullName);
 
@@ -1035,7 +1035,7 @@ namespace OpusRTGS
                                             if (FileTypePart.Count() > 1)
                                             {
                                                 string TempName = FileTypePart[0] + FileTypePart[1];
-                                                if (TempName == "camt054" || TempName == "camt053" || TempName == "camt052")//camt.054
+                                                if (TempName == "camt054" || TempName == "camt052")//For camt054 & camt052
                                                 {
                                                     BizMsgIdr = InerTextOfTag(doc, "BizMsgIdr");
                                                     CreDt = InerTextOfTag(doc, "CreDt");
@@ -1045,6 +1045,43 @@ namespace OpusRTGS
                                                     InstrId = InerTextOfTag(doc, "InstrId");
                                                     AnyBIC = InerTextOfTag(doc, "AnyBIC");
                                                     Amt = InerTextOfTag(doc, "Amt");
+
+                                                    string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', getdate());";
+                                                    SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                                    cmd.ExecuteScalar();
+
+                                                }
+                                                else if (TempName == "camt053")//For Camt053
+                                                {
+                                                    BizMsgIdr = InerTextOfTag(doc, "BizMsgIdr");
+                                                    CreDt = InerTextOfTag(doc, "CreDt");
+                                                    DebDt = InerTextOfTag(doc, "DebDt");
+                                                    AcctId = InerTextOfTag(doc, "Acct");
+                                                    InstrId = InerTextOfTag(doc, "InstrId");
+                                                    AnyBIC = InerTextOfTag(doc, "AnyBIC");
+
+                                                    XmlNodeList NtryelemList = doc.GetElementsByTagName("Ntry");
+
+                                                    foreach (XmlNode node in NtryelemList)
+                                                    {
+                                                        for (int i = 0; i < node.ChildNodes.Count; i++)
+                                                        {
+                                                            if (node.ChildNodes[i].Name == "NtryRef") NtryRef = node.ChildNodes[i].InnerText;
+                                                            else if (node.ChildNodes[i].Name == "Amt") Amt = node.ChildNodes[i].InnerText;
+                                                        }
+
+                                                        string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', getdate());";
+                                                        SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                                        cmd.ExecuteScalar();
+
+                                                    }
+
+                                                    if (NtryelemList.Count == 0)
+                                                    {
+                                                        string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', getdate());";
+                                                        SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                                        cmd.ExecuteScalar();
+                                                    }
                                                 }
                                                 else if (TempName == "pacs002")//pacs.002
                                                 {
@@ -1053,6 +1090,11 @@ namespace OpusRTGS
                                                     DebDt = InerTextOfTag(doc, "DebDt");
                                                     OrgnlInstrId = InerTextOfTag(doc, "OrgnlInstrId");
                                                     Amt = InerTextOfTag(doc, "IntrBkSttlmAmt");
+
+                                                    string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', getdate());";
+                                                    SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                                    cmd.ExecuteScalar();
+
                                                 }
                                                 else
                                                 {
@@ -1062,9 +1104,7 @@ namespace OpusRTGS
 
                                                 sw.WriteLine(file.FullName);
 
-                                                string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', getdate());";
-                                                SqlCommand cmd = new SqlCommand(Tmp, connection);
-                                                cmd.ExecuteScalar();
+
 
                                                 AffectedFileCount++;
 
