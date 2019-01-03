@@ -20,6 +20,7 @@ namespace OpusRTGS
                 BBOutBoundData bbOutBoundData = new BBOutBoundData();
                 RTGSStatusUpdate rtgsStatusUpdate = new RTGSStatusUpdate();
                 SATPStatusUpdate stapStatusUpdate = new SATPStatusUpdate();
+                InboundFileProcess inboundFileProcess = new InboundFileProcess();
 
                 while (true)
                 {
@@ -27,15 +28,17 @@ namespace OpusRTGS
 
                     #region Operations
 
-                    rtgsRead.Run(); 
-                    rtgsInbound.Run();
-                    bbOutBoundData.Run();
+                    //rtgsRead.Run();
+                    //rtgsInbound.Run();
+                    //bbOutBoundData.Run();
 
-                    rtgsReturn.Run();//In Production.
+                    //rtgsReturn.Run();//In Production.
 
-                    rtgsStatusUpdate.Run();
+                    //rtgsStatusUpdate.Run();
 
-                    stapStatusUpdate.Run();//In Production
+                    //stapStatusUpdate.Run();//In Production
+
+                    inboundFileProcess.Run();
                     #endregion
 
                     Console.WriteLine(".....DONE......");
@@ -132,7 +135,7 @@ namespace OpusRTGS
                                             string Tmp1 = $"SELECT BBFileName FROM RTGS WHERE XMLFileName = '{file.Name}'";
                                             SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
                                             mainFileName = (string)cmd1.ExecuteScalar();
-                                           // Console.WriteLine("TT Entry :) ");
+                                            // Console.WriteLine("TT Entry :) ");
                                         }
                                         else
                                         {
@@ -958,5 +961,177 @@ namespace OpusRTGS
         {
             return instance;
         }
+    }
+
+    public class InboundFileProcess
+    {
+        private readonly string SourceFolder;
+        private readonly string LogFolder;
+        private readonly string ConnectionString;
+
+        public InboundFileProcess()
+        {
+            #region Testing...
+            SourceFolder = @"D:\Opus\Development\Jogessor\newfile\InBoundData";
+            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\InboundFileProcessLog";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            #endregion
+
+
+            #region Deploy...
+            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\xmldata";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\xmlToRead";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            #endregion
+
+        }
+
+        public void Run()
+        {
+            try
+            {
+                DateTime dateTime = DateTime.Now;
+                string timeStamp = dateTime.ToString("yyyyMMddHHmmssffff");
+                string LogFileName = LogFolder + "\\InboundFileProcessLog" + timeStamp + ".txt";
+                FileStream fs = new FileStream(LogFileName, FileMode.CreateNew, FileAccess.Write);
+                StreamWriter sw = new StreamWriter(fs);
+                sw.WriteLine(dateTime);
+                int AffectedFileCount = 0;
+                if (Directory.Exists(SourceFolder))
+                {
+                    DirectoryInfo info = new DirectoryInfo(SourceFolder);
+                    FileInfo[] files = info.GetFiles("*.xml").ToArray();
+                    string FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId;
+                    XmlDocument doc = new XmlDocument();
+
+                    if (files.Count() != 0)
+                    {
+                        using (SqlConnection connection = new SqlConnection(ConnectionString))
+                        {
+                            connection.Open();
+                            foreach (FileInfo file in files)
+                            {
+                                FileName = MsgDefIdr = BizMsgIdr = CreDt = DebDt = Amt = AcctId = NtryRef = InstrId = AnyBIC = OrgnlInstrId = "N/A";
+
+                                if (File.Exists(file.FullName))
+                                {
+                                    sw.Write(file.FullName);
+                                    try
+                                    {
+                                        string Tmp1 = $"Select TOP 1 FileName From InboundDataBatch WHERE FileName = '{file.Name}';";
+                                        SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
+                                        string TableFileName = (string)cmd1.ExecuteScalar();  
+                                        if (TableFileName != null) continue;
+                                        doc.Load(file.FullName);
+
+                                        FileName = file.Name;
+
+                                        XmlNodeList elemList = doc.GetElementsByTagName("MsgDefIdr");
+                                        if (elemList.Count > 0)
+                                        {
+                                            MsgDefIdr = elemList[0].InnerText;
+                                            string[] FileTypePart = MsgDefIdr.Split('.');
+
+                                            if (FileTypePart.Count() > 1)
+                                            {
+                                                string TempName = FileTypePart[0] + FileTypePart[1];
+                                                if (TempName == "camt054" || TempName == "camt053" || TempName == "camt052")//camt.054
+                                                {
+                                                    BizMsgIdr = InerTextOfTag(doc, "BizMsgIdr");
+                                                    CreDt = InerTextOfTag(doc, "CreDt");
+                                                    DebDt = InerTextOfTag(doc, "DebDt");
+                                                    AcctId = InerTextOfTag(doc, "Acct");
+                                                    NtryRef = InerTextOfTag(doc, "NtryRef");
+                                                    InstrId = InerTextOfTag(doc, "InstrId");
+                                                    AnyBIC = InerTextOfTag(doc, "AnyBIC");
+                                                    Amt = InerTextOfTag(doc, "Amt");
+                                                }
+                                                else if (TempName == "pacs002")//pacs.002
+                                                {
+                                                    BizMsgIdr = InerTextOfTag(doc, "BizMsgIdr");
+                                                    CreDt = InerTextOfTag(doc, "CreDt");
+                                                    DebDt = InerTextOfTag(doc, "DebDt");
+                                                    OrgnlInstrId = InerTextOfTag(doc, "OrgnlInstrId");
+                                                    Amt = InerTextOfTag(doc, "IntrBkSttlmAmt");
+                                                }
+                                                else
+                                                {
+                                                    //Console.WriteLine(MsgDefIdr);
+                                                    continue;
+                                                }
+
+                                                sw.WriteLine(file.FullName);
+
+                                                string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', getdate());";
+                                                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                                cmd.ExecuteScalar();
+
+                                                AffectedFileCount++;
+
+                                            }
+
+
+                                        }
+
+                                    }
+                                    catch (IOException e)
+                                    {
+                                        sw.WriteLine(e.Message);
+                                        Console.WriteLine(e.Message);
+                                    }
+                                }
+                                else
+                                {
+                                    sw.WriteLine("File Cn't Found");
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        sw.WriteLine("Empty | No  Files For Update");
+                    }
+                }
+                else
+                {
+                    sw.WriteLine("Can't find the folders. Please Communicat with Opus Team.");
+                }
+
+                Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For Inbound File Process");
+
+                sw.WriteLine(AffectedFileCount.ToString() + ", Files Affected");
+                sw.Flush();
+                sw.Close();
+                fs.Close();
+
+                if (File.Exists(LogFileName) && AffectedFileCount == 0)
+                {
+                    File.Delete(LogFileName);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Can't Create Log File Or Database Connection fail, Operation Ignored");
+                Console.WriteLine(e.Message);
+                //If you are here the user clicked decline to grant admin privileges (or he's not administrator)
+            }
+        }
+
+        private string InerTextOfTag(XmlDocument doc, string tagName)
+        {
+            XmlNodeList elemList = doc.GetElementsByTagName(tagName);
+            if (elemList.Count > 0)
+            {
+                if (tagName == "Acct")
+                {
+                    for (int i = 0; i < elemList[0].ChildNodes.Count; i++)
+                        if (elemList[0].ChildNodes[i].Name == "Id") return elemList[0].ChildNodes[i].InnerText;
+                }
+                else
+                    return elemList[0].InnerText;
+            }
+            return "N/A";
+        }
+
     }
 }
