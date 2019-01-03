@@ -28,15 +28,15 @@ namespace OpusRTGS
 
                     #region Operations
 
-                    //rtgsRead.Run();
-                    //rtgsInbound.Run();
-                    //bbOutBoundData.Run();
+                    rtgsRead.Run();
+                    rtgsInbound.Run();
+                    bbOutBoundData.Run();
 
-                    //rtgsReturn.Run();//In Production.
+                    rtgsReturn.Run();//In Production.
 
-                    //rtgsStatusUpdate.Run();
+                    rtgsStatusUpdate.Run();
 
-                    //stapStatusUpdate.Run();//In Production
+                    stapStatusUpdate.Run();//In Production
 
                     inboundFileProcess.Run();
                     #endregion
@@ -972,16 +972,16 @@ namespace OpusRTGS
         public InboundFileProcess()
         {
             #region Testing...
-            SourceFolder = @"D:\Opus\Development\Jogessor\newfile\InBoundData";
-            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\InboundFileProcessLog";
-            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            //SourceFolder = @"D:\Opus\Development\Jogessor\newfile\InBoundData";
+            //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\InboundFileProcessLog";
+            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
 
             #region Deploy...
-            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\xmldata";
-            //LogFolder = @"D:\RTGSFiles\LogFiles\xmlToRead";
-            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
+            LogFolder = @"D:\RTGSFiles\LogFiles\RTGSFileProcess";
+            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
 
         }
