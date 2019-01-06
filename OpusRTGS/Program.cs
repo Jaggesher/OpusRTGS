@@ -28,17 +28,17 @@ namespace OpusRTGS
 
                     #region Operations
 
-                    rtgsRead.Run();
-                    rtgsInbound.Run();
-                    bbOutBoundData.Run();
+                    //rtgsRead.Run();
+                    //rtgsInbound.Run();
+                    //bbOutBoundData.Run();
 
-                    rtgsReturn.Run();//In Production.
+                    //rtgsReturn.Run();//In Production.
 
-                    rtgsStatusUpdate.Run();
+                    //rtgsStatusUpdate.Run();
 
-                    stapStatusUpdate.Run();//In Production
+                    //stapStatusUpdate.Run();//In Production
 
-                    inboundFileProcess.Run();
+                    //inboundFileProcess.Run();
                     #endregion
 
                     Console.WriteLine(".....DONE......");
@@ -1173,5 +1173,53 @@ namespace OpusRTGS
             return "N/A";
         }
 
+    }
+
+
+    public class HandleDuplicate
+    {
+        private readonly string xmlToREAD;
+        private readonly string outToInbound;
+        private readonly string BBOutboudToInput;
+        private readonly string ReturnToInput;
+
+        public HandleDuplicate()
+        {
+            #region Testing...
+            xmlToREAD = @"";
+            outToInbound = @"";
+            BBOutboudToInput = @"";
+            ReturnToInput = @"";
+            #endregion
+
+            #region Deploy
+            xmlToREAD = @"";
+            outToInbound = @"";
+            BBOutboudToInput = @"";
+            ReturnToInput = @"";
+            #endregion
+
+        }
+
+        public void Run(SqlConnection connection, string fileName, string Type)
+        {
+            try
+            {
+                if (Directory.Exists(xmlToREAD) && Directory.Exists(outToInbound) && Directory.Exists(BBOutboudToInput) && Directory.Exists(ReturnToInput))
+                {
+
+                }
+                else
+                {
+
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine("Can't find Directory For Duplicate Handle");
+            }
+
+        }
     }
 }
