@@ -28,18 +28,18 @@ namespace OpusRTGS
 
                     #region Operations
 
-                    //rtgsRead.Run();
-                    //rtgsInbound.Run();
+                    rtgsRead.Run();
+                    rtgsInbound.Run();
 
                     //bbOutBoundData.Run();
 
                     //rtgsReturn.Run();//In Production.
 
-                    rtgsStatusUpdate.Run();
+                    //rtgsStatusUpdate.Run();
 
-                    stapStatusUpdate.Run();//In Production
+                    //stapStatusUpdate.Run();//In Production
 
-                    inboundFileProcess.Run();
+                    //inboundFileProcess.Run();
                     #endregion
 
                     Console.WriteLine(".....DONE......");
@@ -70,10 +70,10 @@ namespace OpusRTGS
         public RTGSRead()
         {
             #region Testing...
-            SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\From";
-            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\Backup";
-            DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\To";
-            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
+            SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\From";
+            BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\Backup";
+            DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\To";
+            LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
@@ -225,10 +225,10 @@ namespace OpusRTGS
         public RTGSInbound()
         {
             #region Testing...
-            SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATP_IN\From";
-            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATP_IN\Backup";
-            DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATP_IN\To";
-            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
+            SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\From";
+            BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\Backup";
+            DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\To";
+            LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
@@ -740,7 +740,7 @@ namespace OpusRTGS
                                             sw.Write(" | Updated successfully");
                                             sw.WriteLine();
 
-                                            handleDuplicate.InsertUpdateFile(connection,file.Name, "T24WRITE");
+                                            handleDuplicate.InsertUpdateFile(connection, file.Name, "T24WRITE");
                                             AffectedFileCount++;
                                         }
 
@@ -1272,10 +1272,10 @@ namespace OpusRTGS
         public HandleDuplicate()
         {
             #region Testing...
-            xmlToREAD = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Duplicate\xmlToREAD";
-            outToInbound = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Duplicate\outToInbound";
-            BBOutboudToInput = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Duplicate\BBOutboudToInput";
-            ReturnToInput = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Duplicate\ReturnToInput";
+            xmlToREAD = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\xmlToREAD";
+            outToInbound = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\outToInbound";
+            BBOutboudToInput = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\BBOutboudToInput";
+            ReturnToInput = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\ReturnToInput";
             #endregion
 
             #region Deploy
@@ -1300,7 +1300,8 @@ namespace OpusRTGS
                 string Tmp = $"insert into RTGSBatchFileUpdateLog (FileName, Type, DateTime) VALUES('{fileName}','SATPAckErr',getdate());";
                 SqlCommand cmd = new SqlCommand(Tmp, connection);
                 cmd.ExecuteScalar();
-            }else if(Type == "InboundFile")
+            }
+            else if (Type == "InboundFile")
             {
                 string Tmp = $"insert into RTGSBatchFileUpdateLog (FileName, Type, DateTime) VALUES('{fileName}','InboundFile',getdate());";
                 SqlCommand cmd = new SqlCommand(Tmp, connection);
@@ -1461,6 +1462,55 @@ namespace OpusRTGS
         public static HandleDuplicate getInstance()
         {
             return instance;
+        }
+    }
+
+    public class Pack08T24Handle
+    {
+        private readonly XmlDocument doc;
+        public Pack08T24Handle()
+        {
+            doc = new XmlDocument();
+        }
+        public void InsertAsExpected(SqlConnection connection, string FullFileName, string fileName)
+        {
+            string AccoutNumber = "N/A";
+            string amount = "0";
+            try
+            {
+                doc.Load(FullFileName);
+                XmlNodeList elements = doc.GetElementsByTagName("CdtTrfTxInf");
+
+                foreach (XmlNode element in elements)
+                {
+                    AccoutNumber = "N/A";
+                    amount = "0";
+                    for (int i = 0; i < element.ChildNodes.Count; i++)
+                    {
+                        if (element.ChildNodes[i].Name == "IntrBkSttlmAmt")
+                        {
+                            amount = element.ChildNodes[i].InnerText;
+                        }
+                        else if (element.ChildNodes[i].Name == "CdtrAcct")
+                        {
+                            AccoutNumber = element.ChildNodes[i].InnerText;
+                        }
+                    }
+
+                    if(AccoutNumber != "N/A")
+                    {
+                        string Tmp = $"INSERT INTO RTGSBatchTemounsExpec (FileName,AccountNumber,Amount,Status, initDateTime) VALUES('{fileName}','{AccoutNumber}','{amount}','notposted',getdate());";
+                        SqlCommand cmd = new SqlCommand(Tmp, connection);
+                        cmd.ExecuteScalar();
+                    }
+                }
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
         }
     }
 }
