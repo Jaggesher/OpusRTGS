@@ -28,17 +28,18 @@ namespace OpusRTGS
 
                     #region Operations
 
-                    rtgsRead.Run();
+                    //rtgsRead.Run();
                     //rtgsInbound.Run();
+
                     //bbOutBoundData.Run();
 
                     //rtgsReturn.Run();//In Production.
 
-                    //rtgsStatusUpdate.Run();
+                    rtgsStatusUpdate.Run();
 
-                    //stapStatusUpdate.Run();//In Production
+                    stapStatusUpdate.Run();//In Production
 
-                    //inboundFileProcess.Run();
+                    inboundFileProcess.Run();
                     #endregion
 
                     Console.WriteLine(".....DONE......");
@@ -156,7 +157,7 @@ namespace OpusRTGS
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             cmd.ExecuteScalar();
 
-                                            handleDuplicate.InsertFile(connection, file.Name, "xmlToRead");
+                                            handleDuplicate.InsertFile(connection, file.Name, file.FullName, "xmlToRead");
                                             AffectedFileCount++;
 
                                         }
@@ -224,20 +225,21 @@ namespace OpusRTGS
         public RTGSInbound()
         {
             #region Testing...
-            //SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATP_IN\From";
-            //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATP_IN\Backup";
-            //DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATP_IN\To";
-            //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
-            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATP_IN\From";
+            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATP_IN\Backup";
+            DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATP_IN\To";
+            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
             #region Deploy...
-            SourceFolder = @"D:\distr_STPAdapter_v21_36\output";
-            BackupFolder = @"D:\RTGSFiles\SATPToInbound";
-            DestinationFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
-            LogFolder = @"D:\RTGSFiles\LogFiles\SATPToInbound";
-            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolder = @"D:\distr_STPAdapter_v21_36\output";
+            //BackupFolder = @"D:\RTGSFiles\SATPToInbound";
+            //DestinationFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\SATPToInbound";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
+            handleDuplicate = HandleDuplicate.getInstance();
         }
 
         public void Run()
@@ -251,6 +253,7 @@ namespace OpusRTGS
                 StreamWriter sw = new StreamWriter(fs);
                 sw.WriteLine(dateTime);
                 int AffectedFileCount = 0;
+                int DuplicateFileCount = 0;
                 if (Directory.Exists(SourceFolder) && Directory.Exists(DestinationFolder) && Directory.Exists(BackupFolder))
                 {
                     DirectoryInfo info = new DirectoryInfo(SourceFolder);
@@ -265,34 +268,44 @@ namespace OpusRTGS
                             {
                                 if (File.Exists(file.FullName))
                                 {
-                                    sw.Write(file.FullName);
-                                    try
+                                    if (!handleDuplicate.IsExixtsFile(connection, file.Name, "outToInbound"))
                                     {
-                                        File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
-                                        sw.Write(" | Coppied  successfully | ");
-                                        if (File.Exists(BackupFolder + "\\" + file.Name))
+                                        sw.Write(file.FullName);
+                                        try
                                         {
-                                            File.Delete(BackupFolder + "\\" + file.Name);
-                                            sw.Write("Duplicate Name | ");
+                                            File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
+                                            sw.Write(" | Coppied  successfully | ");
+                                            if (File.Exists(BackupFolder + "\\" + file.Name))
+                                            {
+                                                File.Delete(BackupFolder + "\\" + file.Name);
+                                                sw.Write("Duplicate Name | ");
+                                            }
+
+                                            File.Move(file.FullName, BackupFolder + "\\" + file.Name);
+                                            sw.Write("Moved successfully");
+                                            sw.WriteLine();
+
+                                            string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
+
+                                            string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, FileName) VALUES(getdate(), 'File Moved From SATP To Upload_InboundData', '{NormalFileName}')";
+                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                            cmd.ExecuteScalar();
+
+                                            handleDuplicate.InsertFile(connection, file.Name, file.FullName, "outToInbound");
+
+                                            AffectedFileCount++;
+
                                         }
-
-                                        File.Move(file.FullName, BackupFolder + "\\" + file.Name);
-                                        sw.Write("Moved successfully");
-                                        sw.WriteLine();
-
-                                        string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
-
-                                        string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, FileName) VALUES(getdate(), 'File Moved From SATP To Upload_InboundData', '{NormalFileName}')";
-                                        SqlCommand cmd = new SqlCommand(Tmp, connection);
-                                        cmd.ExecuteScalar();
-
-                                        AffectedFileCount++;
-
+                                        catch (IOException e)
+                                        {
+                                            sw.WriteLine(e.Message);
+                                            Console.WriteLine(e.Message);
+                                        }
                                     }
-                                    catch (IOException e)
+                                    else
                                     {
-                                        sw.WriteLine(e.Message);
-                                        Console.WriteLine(e.Message);
+                                        handleDuplicate.CleanDuplicate(connection, file.FullName, file.Name, "outToInbound");
+                                        DuplicateFileCount++;
                                     }
                                 }
                                 else
@@ -313,6 +326,8 @@ namespace OpusRTGS
                 }
 
                 Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For SATP To Inbound");
+                Console.WriteLine(DuplicateFileCount.ToString() + ", Duplicate Files For SATP To Inbound");
+
 
                 sw.WriteLine(AffectedFileCount.ToString() + ", Files Affected");
                 sw.Flush();
@@ -345,20 +360,22 @@ namespace OpusRTGS
         public BBOutBoundData()
         {
             #region Testing...
-            //SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\From";
-            //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\Backup";
-            //DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\To";
-            //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\BBOutBound_SATP";
-            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\From";
+            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\Backup";
+            DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BBOutBound_SATP\To";
+            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\BBOutBound_SATP";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
             #region Deploy...
-            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\BBOutBoundData";
-            BackupFolder = @"D:\RTGSFiles\BBOutToSATP";
-            DestinationFolder = @"D:\distr_STPAdapter_v21_36\input";
-            LogFolder = @"D:\RTGSFiles\LogFiles\BBOutToSATP";
-            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\BBOutBoundData";
+            //BackupFolder = @"D:\RTGSFiles\BBOutToSATP";
+            //DestinationFolder = @"D:\distr_STPAdapter_v21_36\input";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\BBOutToSATP";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
+
+            handleDuplicate = HandleDuplicate.getInstance();
         }
 
         public void Run()
@@ -372,6 +389,7 @@ namespace OpusRTGS
                 StreamWriter sw = new StreamWriter(fs);
                 sw.WriteLine(dateTime);
                 int AffectedFileCount = 0;
+                int DuplicateFileCount = 0;
                 if (Directory.Exists(SourceFolder) && Directory.Exists(DestinationFolder) && Directory.Exists(BackupFolder))
                 {
                     DirectoryInfo info = new DirectoryInfo(SourceFolder);
@@ -386,34 +404,42 @@ namespace OpusRTGS
                             {
                                 if (File.Exists(file.FullName))
                                 {
-                                    sw.Write(file.FullName);
-                                    try
+                                    if (!handleDuplicate.IsExixtsFile(connection, file.Name, "BBOutboudToInput"))
                                     {
-                                        File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
-                                        sw.Write(" | Coppied  successfully | ");
-                                        if (File.Exists(BackupFolder + "\\" + file.Name))
+                                        sw.Write(file.FullName);
+                                        try
                                         {
-                                            File.Delete(BackupFolder + "\\" + file.Name);
-                                            sw.Write("Duplicate Name | ");
+                                            File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
+                                            sw.Write(" | Coppied  successfully | ");
+                                            if (File.Exists(BackupFolder + "\\" + file.Name))
+                                            {
+                                                File.Delete(BackupFolder + "\\" + file.Name);
+                                                sw.Write("Duplicate Name | ");
+                                            }
+
+                                            File.Move(file.FullName, BackupFolder + "\\" + file.Name);
+                                            sw.Write("Moved successfully");
+                                            sw.WriteLine();
+
+                                            string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
+
+                                            string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From BBOutBound To SATP Input', '{NormalFileName}')";
+                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                            cmd.ExecuteScalar();
+                                            handleDuplicate.InsertFile(connection, file.Name, file.FullName, "BBOutboudToInput");
+                                            AffectedFileCount++;
+
                                         }
-
-                                        File.Move(file.FullName, BackupFolder + "\\" + file.Name);
-                                        sw.Write("Moved successfully");
-                                        sw.WriteLine();
-
-                                        string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
-
-                                        string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From BBOutBound To SATP Input', '{NormalFileName}')";
-                                        SqlCommand cmd = new SqlCommand(Tmp, connection);
-                                        cmd.ExecuteScalar();
-
-                                        AffectedFileCount++;
-
+                                        catch (IOException e)
+                                        {
+                                            sw.WriteLine(e.Message);
+                                            Console.WriteLine(e.Message);
+                                        }
                                     }
-                                    catch (IOException e)
+                                    else
                                     {
-                                        sw.WriteLine(e.Message);
-                                        Console.WriteLine(e.Message);
+                                        handleDuplicate.CleanDuplicate(connection, file.FullName, file.Name, "BBOutboudToInput");
+                                        DuplicateFileCount++;
                                     }
                                 }
                                 else
@@ -434,6 +460,7 @@ namespace OpusRTGS
                 }
 
                 Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For BBOut To Input");
+                Console.WriteLine(DuplicateFileCount.ToString() + ", Duplicate Files For BBOut To Input");
 
                 sw.WriteLine(AffectedFileCount.ToString() + ", Files Affected");
                 sw.Flush();
@@ -463,20 +490,22 @@ namespace OpusRTGS
         public RTGSReturn()
         {
             #region  Testing...
-            //SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\From";
-            //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\Backup";
-            //DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\To";
-            //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\Return_IN";
-            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\From";
+            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\Backup";
+            DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\To";
+            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\Return_IN";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
             #region Deploy...
-            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\ReturnInBound";
-            BackupFolder = @"D:\RTGSFiles\ReturnInboundToInput";
-            DestinationFolder = @"D:\distr_STPAdapter_v21_36\input";
-            LogFolder = @"D:\RTGSFiles\LogFiles\ReturnInboundToInput";
-            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\ReturnInBound";
+            //BackupFolder = @"D:\RTGSFiles\ReturnInboundToInput";
+            //DestinationFolder = @"D:\distr_STPAdapter_v21_36\input";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\ReturnInboundToInput";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
+
+            handleDuplicate = HandleDuplicate.getInstance();
         }
 
         public void Run()
@@ -490,6 +519,7 @@ namespace OpusRTGS
                 StreamWriter sw = new StreamWriter(fs);
                 sw.WriteLine(dateTime);
                 int AffectedFileCount = 0;
+                int DuplicateFileCount = 0;
                 if (Directory.Exists(SourceFolder) && Directory.Exists(DestinationFolder) && Directory.Exists(BackupFolder))
                 {
                     DirectoryInfo info = new DirectoryInfo(SourceFolder);
@@ -504,34 +534,44 @@ namespace OpusRTGS
                             {
                                 if (File.Exists(file.FullName))
                                 {
-                                    sw.Write(file.FullName);
-                                    try
+                                    if (!handleDuplicate.IsExixtsFile(connection, file.Name, "ReturnToInput"))
                                     {
-                                        File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
-                                        sw.Write(" | Coppied  successfully | ");
-                                        if (File.Exists(BackupFolder + "\\" + file.Name))
+                                        sw.Write(file.FullName);
+                                        try
                                         {
-                                            File.Delete(BackupFolder + "\\" + file.Name);
-                                            sw.Write("Duplicate Name | ");
+                                            File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
+                                            sw.Write(" | Coppied  successfully | ");
+                                            if (File.Exists(BackupFolder + "\\" + file.Name))
+                                            {
+                                                File.Delete(BackupFolder + "\\" + file.Name);
+                                                sw.Write("Duplicate Name | ");
+                                            }
+
+                                            File.Move(file.FullName, BackupFolder + "\\" + file.Name);
+                                            sw.Write("Moved successfully");
+                                            sw.WriteLine();
+
+                                            string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
+
+                                            string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From ReturnInBound To SATP Input', '{NormalFileName}')";
+                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                            cmd.ExecuteScalar();
+
+                                            handleDuplicate.InsertFile(connection, file.Name, file.FullName, "ReturnToInput");
+
+                                            AffectedFileCount++;
+
                                         }
-
-                                        File.Move(file.FullName, BackupFolder + "\\" + file.Name);
-                                        sw.Write("Moved successfully");
-                                        sw.WriteLine();
-
-                                        string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
-
-                                        string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From ReturnInBound To SATP Input', '{NormalFileName}')";
-                                        SqlCommand cmd = new SqlCommand(Tmp, connection);
-                                        cmd.ExecuteScalar();
-
-                                        AffectedFileCount++;
-
+                                        catch (IOException e)
+                                        {
+                                            sw.WriteLine(e.Message);
+                                            Console.WriteLine(e.Message);
+                                        }
                                     }
-                                    catch (IOException e)
+                                    else
                                     {
-                                        sw.WriteLine(e.Message);
-                                        Console.WriteLine(e.Message);
+                                        handleDuplicate.CleanDuplicate(connection, file.FullName, file.Name, "ReturnToInput");
+                                        DuplicateFileCount++;
                                     }
                                 }
                                 else
@@ -552,6 +592,7 @@ namespace OpusRTGS
                 }
 
                 Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For Return To Input");
+                Console.WriteLine(DuplicateFileCount.ToString() + ", Duplicate Files For Return To Input");
 
                 sw.WriteLine(AffectedFileCount.ToString() + ", Files Affected");
                 sw.Flush();
@@ -583,19 +624,20 @@ namespace OpusRTGS
         {
 
             #region Testing...  
-            //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\RTGSStatus";
-            //ConnectionString = @"Data Source=DESKTOP-ALPFNNL;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
-            //SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\Source";//Assuming Test is your Folder
-            //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\backup";
+            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\RTGSStatus";
+            ConnectionString = @"Data Source=DESKTOP-ALPFNNL;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\Source";//Assuming Test is your Folder
+            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\backup";
             #endregion
 
             #region Deploy...
-            LogFolder = @"D:\RTGSFiles\LogFiles\T24StatusUpdate";
-            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
-            SourceFolder = @"X:\AGR.WRITE";//Assuming Test is your Folder
-            BackupFolder = @"D:\RTGSFiles\T24WriteBackup";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\T24StatusUpdate";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolder = @"X:\AGR.WRITE";//Assuming Test is your Folder
+            //BackupFolder = @"D:\RTGSFiles\T24WriteBackup";
             #endregion
 
+            handleDuplicate = HandleDuplicate.getInstance();
 
         }
 
@@ -698,6 +740,7 @@ namespace OpusRTGS
                                             sw.Write(" | Updated successfully");
                                             sw.WriteLine();
 
+                                            handleDuplicate.InsertUpdateFile(connection,file.Name, "T24WRITE");
                                             AffectedFileCount++;
                                         }
 
@@ -757,21 +800,22 @@ namespace OpusRTGS
         public SATPStatusUpdate()
         {
             #region Testing...
-            //SourceFolderErr = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Err";
-            //SourceFolderAck = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Ack";
-            //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Backup";
-            //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATPStatus";
-            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            SourceFolderErr = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Err";
+            SourceFolderAck = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Ack";
+            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\SATPStatus\Backup";
+            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATPStatus";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
             #region Deploy...
-            SourceFolderErr = @"D:\distr_STPAdapter_v21_36\error";
-            SourceFolderAck = @"D:\distr_STPAdapter_v21_36\accepted";
-            BackupFolder = @"D:\RTGSFiles\SATPStatusUpdateBackup";
-            LogFolder = @"D:\RTGSFiles\LogFiles\SATPStatusUpdate";
-            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolderErr = @"D:\distr_STPAdapter_v21_36\error";
+            //SourceFolderAck = @"D:\distr_STPAdapter_v21_36\accepted";
+            //BackupFolder = @"D:\RTGSFiles\SATPStatusUpdateBackup";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\SATPStatusUpdate";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
 
+            handleDuplicate = HandleDuplicate.getInstance();
             xmlDoc = new XmlDocument();
 
         }
@@ -843,6 +887,8 @@ namespace OpusRTGS
 
                                         //Aditional Logic
 
+                                        handleDuplicate.InsertUpdateFile(connection, file.Name, "SATPAckErr");
+
                                         AffectedFileCount++;
                                     }
                                     catch (IOException e)
@@ -902,6 +948,7 @@ namespace OpusRTGS
                                         }
 
                                         //Aditional Logic
+                                        handleDuplicate.InsertUpdateFile(connection, file.Name, "SATPAckErr");
 
                                         AffectedFileCount++;
                                     }
@@ -1002,7 +1049,7 @@ namespace OpusRTGS
             //LogFolder = @"D:\RTGSFiles\LogFiles\RTGSFileProcess";
             //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
-
+            handleDuplicate = HandleDuplicate.getInstance();
         }
 
         public void Run()
@@ -1143,7 +1190,7 @@ namespace OpusRTGS
                                                 sw.WriteLine(file.FullName);
 
 
-
+                                                handleDuplicate.InsertUpdateFile(connection, file.Name, "InboundFile");
                                                 AffectedFileCount++;
 
                                             }
@@ -1240,7 +1287,27 @@ namespace OpusRTGS
 
         }
 
-        public void InsertFile(SqlConnection connection, string fileName, string Type)
+        public void InsertUpdateFile(SqlConnection connection, string fileName, string Type)
+        {
+            if (Type == "T24WRITE")
+            {
+                string Tmp = $"insert into RTGSBatchFileUpdateLog (FileName, Type, DateTime) VALUES('{fileName}','T24WRITE',getdate());";
+                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                cmd.ExecuteScalar();
+            }
+            else if (Type == "SATPAckErr")
+            {
+                string Tmp = $"insert into RTGSBatchFileUpdateLog (FileName, Type, DateTime) VALUES('{fileName}','SATPAckErr',getdate());";
+                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                cmd.ExecuteScalar();
+            }else if(Type == "InboundFile")
+            {
+                string Tmp = $"insert into RTGSBatchFileUpdateLog (FileName, Type, DateTime) VALUES('{fileName}','InboundFile',getdate());";
+                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                cmd.ExecuteScalar();
+            }
+        }
+        public void InsertFile(SqlConnection connection, string fileName, string FullFileName, string Type)
         {
             if (Type == "xmlToRead")
             {
@@ -1313,7 +1380,7 @@ namespace OpusRTGS
                         string tempFilename = fileName;
                         while (File.Exists(xmlToREAD + "/" + tempFilename))
                         {
-                            tempFilename =(fileName+ "." + f.ToString());
+                            tempFilename = (fileName + "." + f.ToString());
                             f++;
                         }
                         fileName = tempFilename;
