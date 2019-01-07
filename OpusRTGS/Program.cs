@@ -28,7 +28,7 @@ namespace OpusRTGS
 
                     #region Operations
 
-                    //rtgsRead.Run();
+                    rtgsRead.Run();
                     //rtgsInbound.Run();
                     //bbOutBoundData.Run();
 
@@ -38,14 +38,14 @@ namespace OpusRTGS
 
                     //stapStatusUpdate.Run();//In Production
 
-                    inboundFileProcess.Run();
+                    //inboundFileProcess.Run();
                     #endregion
 
                     Console.WriteLine(".....DONE......");
                     Console.WriteLine("-------------------------------------------------------------------------------\n");
                     Console.WriteLine("Waiting...........");
 
-                    System.Threading.Thread.Sleep(1 * 60 * 1000);
+                    System.Threading.Thread.Sleep(1 * 10 * 1000);
                 }
             }
             catch (Exception e)
@@ -64,25 +64,28 @@ namespace OpusRTGS
         private readonly string DestinationFolder;
         private readonly string LogFolder;
         private readonly string ConnectionString;
+        private readonly HandleDuplicate handleDuplicate;
 
         public RTGSRead()
         {
             #region Testing...
-            //SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\From";
-            //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\Backup";
-            //DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\To";
-            //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
-            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\From";
+            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\Backup";
+            DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\To";
+            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
 
             #region Deploy...
-            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\xmldata";
-            BackupFolder = @"D:\RTGSFiles\xmlToREAD";
-            DestinationFolder = @"X:\AGR.READ";
-            LogFolder = @"D:\RTGSFiles\LogFiles\xmlToRead";
-            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\xmldata";
+            //BackupFolder = @"D:\RTGSFiles\xmlToREAD";
+            //DestinationFolder = @"X:\AGR.READ";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\xmlToRead";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
+
+            handleDuplicate = HandleDuplicate.getInstance();
 
         }
 
@@ -97,6 +100,7 @@ namespace OpusRTGS
                 StreamWriter sw = new StreamWriter(fs);
                 sw.WriteLine(dateTime);
                 int AffectedFileCount = 0;
+                int DuplicateFileCount = 0;
                 if (Directory.Exists(SourceFolder) && Directory.Exists(DestinationFolder) && Directory.Exists(BackupFolder))
                 {
                     DirectoryInfo info = new DirectoryInfo(SourceFolder);
@@ -112,50 +116,60 @@ namespace OpusRTGS
                                 if (File.Exists(file.FullName))
                                 {
                                     sw.Write(file.FullName);
-                                    try
+
+                                    if (!handleDuplicate.IsExixtsFile(connection, file.Name, "xmlToRead"))
                                     {
-                                        File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
-                                        sw.Write(" | Coppied  successfully | ");
-                                        if (File.Exists(BackupFolder + "\\" + file.Name))
+                                        try
                                         {
-                                            File.Delete(BackupFolder + "\\" + file.Name);
-                                            sw.Write("Duplicate Name | ");
+                                            File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
+                                            sw.Write(" | Coppied  successfully | ");
+                                            if (File.Exists(BackupFolder + "\\" + file.Name))
+                                            {
+                                                File.Delete(BackupFolder + "\\" + file.Name);
+                                                sw.Write("Duplicate Name | ");
+                                            }
+
+                                            File.Move(file.FullName, BackupFolder + "\\" + file.Name);
+                                            sw.Write("Moved successfully");
+                                            sw.WriteLine();
+
+                                            string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
+                                            string[] SplitFileName = NormalFileName.Split('_');
+                                            string mainFileName = "Can't Find";
+
+                                            if (SplitFileName[1] == "TT")
+                                            {
+                                                string Tmp1 = $"SELECT BBFileName FROM RTGS WHERE XMLFileName = '{file.Name}'";
+                                                SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
+                                                mainFileName = (string)cmd1.ExecuteScalar();
+                                                // Console.WriteLine("TT Entry :) ");
+                                            }
+                                            else
+                                            {
+                                                string Tmp1 = $"SELECT FileName FROM XMLDataUpload WHERE XMLFileName = '{NormalFileName}'";
+                                                SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
+                                                mainFileName = (string)cmd1.ExecuteScalar();
+
+                                            }
+
+                                            string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName, FileName) VALUES(getdate(), 'File Moved From XML To T24 READ', '{NormalFileName}','{mainFileName}')";
+                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                            cmd.ExecuteScalar();
+
+                                            handleDuplicate.InsertFile(connection, file.Name, "xmlToRead");
+                                            AffectedFileCount++;
+
                                         }
-
-                                        File.Move(file.FullName, BackupFolder + "\\" + file.Name);
-                                        sw.Write("Moved successfully");
-                                        sw.WriteLine();
-
-                                        string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
-                                        string[] SplitFileName = NormalFileName.Split('_');
-                                        string mainFileName = "Can't Find";
-
-                                        if (SplitFileName[1] == "TT")
+                                        catch (IOException e)
                                         {
-                                            string Tmp1 = $"SELECT BBFileName FROM RTGS WHERE XMLFileName = '{file.Name}'";
-                                            SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
-                                            mainFileName = (string)cmd1.ExecuteScalar();
-                                            // Console.WriteLine("TT Entry :) ");
+                                            sw.WriteLine(e.Message);
+                                            Console.WriteLine(e.Message);
                                         }
-                                        else
-                                        {
-                                            string Tmp1 = $"SELECT FileName FROM XMLDataUpload WHERE XMLFileName = '{NormalFileName}'";
-                                            SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
-                                            mainFileName = (string)cmd1.ExecuteScalar();
-
-                                        }
-
-                                        string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName, FileName) VALUES(getdate(), 'File Moved From XML To T24 READ', '{NormalFileName}','{mainFileName}')";
-                                        SqlCommand cmd = new SqlCommand(Tmp, connection);
-                                        cmd.ExecuteScalar();
-
-                                        AffectedFileCount++;
-
                                     }
-                                    catch (IOException e)
+                                    else
                                     {
-                                        sw.WriteLine(e.Message);
-                                        Console.WriteLine(e.Message);
+                                        handleDuplicate.CleanDuplicate(connection, file.FullName, file.Name, "xmlToRead");
+                                        DuplicateFileCount++;
                                     }
                                 }
                                 else
@@ -176,6 +190,8 @@ namespace OpusRTGS
                 }
 
                 Console.WriteLine(AffectedFileCount.ToString() + ", Files Affected For XML To T24Read");
+
+                Console.WriteLine(DuplicateFileCount.ToString() + ", Duplicate Files For XML TO T24Read");
 
                 sw.WriteLine(AffectedFileCount.ToString() + ", Files Affected");
                 sw.Flush();
@@ -203,6 +219,7 @@ namespace OpusRTGS
         private readonly string DestinationFolder;
         private readonly string LogFolder;
         private readonly string ConnectionString;
+        private readonly HandleDuplicate handleDuplicate;
 
         public RTGSInbound()
         {
@@ -323,6 +340,7 @@ namespace OpusRTGS
         private readonly string DestinationFolder;
         private readonly string LogFolder;
         private readonly string ConnectionString;
+        private readonly HandleDuplicate handleDuplicate;
 
         public BBOutBoundData()
         {
@@ -441,7 +459,7 @@ namespace OpusRTGS
         private readonly string DestinationFolder;
         private readonly string LogFolder;
         private readonly string ConnectionString;
-
+        private readonly HandleDuplicate handleDuplicate;
         public RTGSReturn()
         {
             #region  Testing...
@@ -559,6 +577,7 @@ namespace OpusRTGS
         private readonly string BackupFolder;
         private readonly string ConnectionString;
         private readonly string SourceFolder;
+        private readonly HandleDuplicate handleDuplicate;
 
         public RTGSStatusUpdate()
         {
@@ -734,7 +753,7 @@ namespace OpusRTGS
         private readonly string LogFolder;
         private readonly string ConnectionString;
         private readonly XmlDocument xmlDoc;
-
+        private readonly HandleDuplicate handleDuplicate;
         public SATPStatusUpdate()
         {
             #region Testing...
@@ -968,7 +987,7 @@ namespace OpusRTGS
         private readonly string SourceFolder;
         private readonly string LogFolder;
         private readonly string ConnectionString;
-
+        private readonly HandleDuplicate handleDuplicate;
         public InboundFileProcess()
         {
             #region Testing...
@@ -1060,7 +1079,7 @@ namespace OpusRTGS
                                                     NtryRef = InerTextOfTag(doc, "NtryRef");
                                                     InstrId = InerTextOfTag(doc, "InstrId");
                                                     AnyBIC = InerTextOfTag(doc, "AnyBIC");
-                                                    
+
                                                     XmlNodeList nodes = doc.GetElementsByTagName("Amt");
                                                     foreach (XmlNode node in nodes)
                                                     {
@@ -1194,7 +1213,6 @@ namespace OpusRTGS
 
     }
 
-
     public class HandleDuplicate
     {
         private readonly string xmlToREAD;
@@ -1202,35 +1220,168 @@ namespace OpusRTGS
         private readonly string BBOutboudToInput;
         private readonly string ReturnToInput;
 
+        private static HandleDuplicate instance = new HandleDuplicate();
+
         public HandleDuplicate()
         {
             #region Testing...
-            xmlToREAD = @"";
-            outToInbound = @"";
-            BBOutboudToInput = @"";
-            ReturnToInput = @"";
+            xmlToREAD = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Duplicate\xmlToREAD";
+            outToInbound = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Duplicate\outToInbound";
+            BBOutboudToInput = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Duplicate\BBOutboudToInput";
+            ReturnToInput = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Duplicate\ReturnToInput";
             #endregion
 
             #region Deploy
-            xmlToREAD = @"";
-            outToInbound = @"";
-            BBOutboudToInput = @"";
-            ReturnToInput = @"";
+            //xmlToREAD = @"";
+            //outToInbound = @"";
+            //BBOutboudToInput = @"";
+            //ReturnToInput = @"";
             #endregion
 
         }
 
-        public void Run(SqlConnection connection, string fileName, string Type)
+        public void InsertFile(SqlConnection connection, string fileName, string Type)
+        {
+            if (Type == "xmlToRead")
+            {
+                string Tmp = $"insert into RTGSBatchFileLog (FileName, Type, DateTime) VALUES('{fileName}','xmlToRead',getdate());";
+                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                cmd.ExecuteScalar();
+            }
+            else if (Type == "outToInbound")
+            {
+                string Tmp = $"insert into RTGSBatchFileLog (FileName, Type, DateTime) VALUES('{fileName}','outToInbound',getdate());";
+                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                cmd.ExecuteScalar();
+            }
+            else if (Type == "BBOutboudToInput")
+            {
+                string Tmp = $"insert into RTGSBatchFileLog (FileName, Type, DateTime) VALUES('{fileName}','BBOutboudToInput',getdate());";
+                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                cmd.ExecuteScalar();
+            }
+            else if (Type == "ReturnToInput")
+            {
+                string Tmp = $"insert into RTGSBatchFileLog (FileName, Type, DateTime) VALUES('{fileName}','ReturnToInput',getdate());";
+                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                cmd.ExecuteScalar();
+            }
+        }
+
+        public bool IsExixtsFile(SqlConnection connection, string fileName, string Type)
+        {
+            string result = "";
+            if (Type == "xmlToRead")
+            {
+                string Tmp = $"SELECT FileName FROM RTGSBatchFileLog WHERE Type = 'xmlToRead' AND FileName='{fileName}'";
+                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                result = (string)cmd.ExecuteScalar();
+            }
+            else if (Type == "outToInbound")
+            {
+                string Tmp = $"SELECT FileName FROM RTGSBatchFileLog WHERE Type = 'outToInbound' AND FileName='{fileName}'";
+                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                result = (string)cmd.ExecuteScalar();
+            }
+            else if (Type == "BBOutboudToInput")
+            {
+                string Tmp = $"SELECT FileName FROM RTGSBatchFileLog WHERE Type = 'BBOutboudToInput' AND FileName='{fileName}'";
+                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                result = (string)cmd.ExecuteScalar();
+            }
+            else if (Type == "ReturnToInput")
+            {
+                string Tmp = $"SELECT FileName FROM RTGSBatchFileLog WHERE Type = 'ReturnToInput' AND FileName='{fileName}'";
+                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                result = (string)cmd.ExecuteScalar();
+            }
+
+            if (result != null) return true;
+
+            return false;
+        }
+
+        public void CleanDuplicate(SqlConnection connection, string FileFullName, string fileName, string Type)
         {
             try
             {
                 if (Directory.Exists(xmlToREAD) && Directory.Exists(outToInbound) && Directory.Exists(BBOutboudToInput) && Directory.Exists(ReturnToInput))
                 {
+                    if (Type == "xmlToRead")
+                    {
+                        int f = 1;
+                        string tempFilename = fileName;
+                        while (File.Exists(xmlToREAD + "/" + tempFilename))
+                        {
+                            tempFilename =(fileName+ "." + f.ToString());
+                            f++;
+                        }
+                        fileName = tempFilename;
 
+                        File.Move(FileFullName, xmlToREAD + "/" + fileName);
+
+                        string Tmp = $"INSERT INTO RTGSBatchFileDuplicateLog (FileName, Type, DateTime) VALUES ('{fileName}', 'xmlToRead', getdate());";
+                        SqlCommand cmd = new SqlCommand(Tmp, connection);
+                        cmd.ExecuteScalar();
+
+                    }
+                    else if (Type == "outToInbound")
+                    {
+                        int f = 1;
+                        string tempFilename = fileName;
+                        while (File.Exists(outToInbound + "/" + tempFilename))
+                        {
+                            tempFilename = (fileName + "." + f.ToString());
+                            f++;
+                        }
+                        fileName = tempFilename;
+
+                        File.Move(FileFullName, outToInbound + "/" + fileName);
+
+                        string Tmp = $"INSERT INTO RTGSBatchFileDuplicateLog (FileName, Type, DateTime) VALUES ('{fileName}', 'outToInbound', getdate());";
+                        SqlCommand cmd = new SqlCommand(Tmp, connection);
+                        cmd.ExecuteScalar();
+
+                    }
+                    else if (Type == "BBOutboudToInput")
+                    {
+                        int f = 1;
+                        string tempFilename = fileName;
+                        while (File.Exists(BBOutboudToInput + "/" + tempFilename))
+                        {
+                            tempFilename = (fileName + "." + f.ToString());
+                            f++;
+                        }
+                        fileName = tempFilename;
+
+                        File.Move(FileFullName, BBOutboudToInput + "/" + fileName);
+
+                        string Tmp = $"INSERT INTO RTGSBatchFileDuplicateLog (FileName, Type, DateTime) VALUES ('{fileName}', 'BBOutboudToInput', getdate());";
+                        SqlCommand cmd = new SqlCommand(Tmp, connection);
+                        cmd.ExecuteScalar();
+
+                    }
+                    else if (Type == "ReturnToInput")
+                    {
+                        int f = 1;
+                        string tempFilename = fileName;
+                        while (File.Exists(ReturnToInput + "/" + tempFilename))
+                        {
+                            tempFilename = (fileName + "." + f.ToString());
+                            f++;
+                        }
+                        fileName = tempFilename;
+
+                        File.Move(FileFullName, ReturnToInput + "/" + fileName);
+
+                        string Tmp = $"INSERT INTO RTGSBatchFileDuplicateLog (FileName, Type, DateTime) VALUES ('{fileName}', 'ReturnToInput', getdate());";
+                        SqlCommand cmd = new SqlCommand(Tmp, connection);
+                        cmd.ExecuteScalar();
+                    }
                 }
                 else
                 {
-
+                    Console.WriteLine("Some Of the directory can't found so operation ignored");
                 }
             }
             catch (Exception e)
@@ -1238,7 +1389,11 @@ namespace OpusRTGS
                 Console.WriteLine(e.Message);
                 Console.WriteLine("Can't find Directory For Duplicate Handle");
             }
+        }
 
+        public static HandleDuplicate getInstance()
+        {
+            return instance;
         }
     }
 }
