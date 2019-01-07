@@ -38,7 +38,7 @@ namespace OpusRTGS
 
                     //stapStatusUpdate.Run();//In Production
 
-                    //inboundFileProcess.Run();
+                    inboundFileProcess.Run();
                     #endregion
 
                     Console.WriteLine(".....DONE......");
@@ -972,16 +972,16 @@ namespace OpusRTGS
         public InboundFileProcess()
         {
             #region Testing...
-            //SourceFolder = @"D:\Opus\Development\Jogessor\newfile\InBoundData";
-            //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\InboundFileProcessLog";
-            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            SourceFolder = @"D:\Opus\Development\Jogessor\newfile\InBoundData";
+            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\InboundFileProcessLog";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
 
             #region Deploy...
-            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
-            LogFolder = @"D:\RTGSFiles\LogFiles\RTGSFileProcess";
-            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\RTGSFileProcess";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
 
         }
@@ -1035,7 +1035,7 @@ namespace OpusRTGS
                                             if (FileTypePart.Count() > 1)
                                             {
                                                 string TempName = FileTypePart[0] + FileTypePart[1];
-                                                if (TempName == "camt054" || TempName == "camt052")//For camt054 & camt052
+                                                if (TempName == "camt054")//For camt054 & camt052
                                                 {
                                                     BizMsgIdr = InerTextOfTag(doc, "BizMsgIdr");
                                                     CreDt = InerTextOfTag(doc, "CreDt");
@@ -1050,6 +1050,25 @@ namespace OpusRTGS
                                                     SqlCommand cmd = new SqlCommand(Tmp, connection);
                                                     cmd.ExecuteScalar();
 
+                                                }
+                                                else if (TempName == "camt052")
+                                                {
+                                                    BizMsgIdr = InerTextOfTag(doc, "BizMsgIdr");
+                                                    CreDt = InerTextOfTag(doc, "CreDt");
+                                                    DebDt = InerTextOfTag(doc, "DebDt");
+                                                    AcctId = InerTextOfTag(doc, "Acct");
+                                                    NtryRef = InerTextOfTag(doc, "NtryRef");
+                                                    InstrId = InerTextOfTag(doc, "InstrId");
+                                                    AnyBIC = InerTextOfTag(doc, "AnyBIC");
+                                                    
+                                                    XmlNodeList nodes = doc.GetElementsByTagName("Amt");
+                                                    foreach (XmlNode node in nodes)
+                                                    {
+                                                        Amt = node.InnerText;
+                                                        string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', getdate());";
+                                                        SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                                        cmd.ExecuteScalar();
+                                                    }
                                                 }
                                                 else if (TempName == "camt053")//For Camt053
                                                 {
