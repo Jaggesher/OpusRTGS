@@ -64,8 +64,11 @@ namespace OpusRTGS
         private readonly string BackupFolder;
         private readonly string DestinationFolder;
         private readonly string LogFolder;
+        private readonly string RejectedFolder;
+        private readonly XmlDocument doc;
         private readonly string ConnectionString;
         private readonly HandleDuplicate handleDuplicate;
+
 
         public RTGSRead()
         {
@@ -74,6 +77,7 @@ namespace OpusRTGS
             BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\Backup";
             DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\To";
             LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
+            RejectedFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BatchReject";
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
@@ -83,11 +87,12 @@ namespace OpusRTGS
             //BackupFolder = @"D:\RTGSFiles\xmlToREAD";
             //DestinationFolder = @"X:\AGR.READ";
             //LogFolder = @"D:\RTGSFiles\LogFiles\xmlToRead";
+            //RejectedFolder = @"";
             //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
 
             handleDuplicate = HandleDuplicate.getInstance();
-
+            doc = new XmlDocument();
         }
 
         public void Run()
@@ -122,43 +127,101 @@ namespace OpusRTGS
                                     {
                                         try
                                         {
-                                            File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
-                                            sw.Write(" | Coppied  successfully | ");
-                                            if (File.Exists(BackupFolder + "\\" + file.Name))
-                                            {
-                                                File.Delete(BackupFolder + "\\" + file.Name);
-                                                sw.Write("Duplicate Name | ");
-                                            }
-
-                                            File.Move(file.FullName, BackupFolder + "\\" + file.Name);
-                                            sw.Write("Moved successfully");
-                                            sw.WriteLine();
-
                                             string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
                                             string[] SplitFileName = NormalFileName.Split('_');
                                             string mainFileName = "Can't Find";
 
-                                            if (SplitFileName[1] == "TT")
+                                            bool flag = true;
+
+                                            if (SplitFileName[1] != "TT")
                                             {
-                                                string Tmp1 = $"SELECT BBFileName FROM RTGS WHERE XMLFileName = '{file.Name}'";
+                                                doc.Load(file.FullName);
+                                                string AccountNumber, Amount;
+                                                AccountNumber = "N/A";
+                                                Amount = "0";
+
+                                                XmlNodeList elements = doc.GetElementsByTagName("CREDIT_ACCT_NO");
+                                                if (elements.Count > 0)
+                                                {
+                                                    AccountNumber = elements[0].InnerText;
+                                                }
+
+                                                elements = doc.GetElementsByTagName("DEBIT_AMOUNT");
+
+                                                if (elements.Count > 0)
+                                                {
+                                                    Amount = elements[0].InnerText;
+                                                }
+
+                                                string Tmp1 = $"SELECT TOP 1 FileName FROM RTGSBatchTemounsExpec WHERE AccountNumber = '{AccountNumber}' AND AMOUNT = '{Amount}' AND Status = 'notposted'";
                                                 SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
-                                                mainFileName = (string)cmd1.ExecuteScalar();
-                                                // Console.WriteLine("TT Entry :) ");
+                                                string fileNameCheck = (string)cmd1.ExecuteScalar();
+                                                
+                                                if(fileNameCheck != null)
+                                                {
+                                                    Tmp1 = $"UPDATE RTGSBatchTemounsExpec SET Status = 'posted', xmlFileName = '{file.Name}', T24DateTime = getdate() WHERE ID = (SELECT TOP 1 ID FROM RTGSBatchTemounsExpec WHERE AccountNumber = '{AccountNumber}' AND AMOUNT = '{Amount}' AND Status = 'notposted');";
+                                                    cmd1 = new SqlCommand(Tmp1, connection);
+                                                    cmd1.ExecuteScalar();
+                                                }
+                                                else
+                                                {
+                                                    flag = false;
+
+                                                    Tmp1 = $"SELECT TOP 1 FileName FROM RTGSBatchTemounsExpec WHERE AccountNumber = '{AccountNumber}' AND AMOUNT = '{Amount}'";
+                                                    cmd1 = new SqlCommand(Tmp1, connection);
+                                                    fileNameCheck = (string) cmd1.ExecuteScalar();
+
+                                                    if(fileNameCheck != null)
+                                                    {
+                                                        File.Move(file.FullName, RejectedFolder + "//Dup//" + file.Name);
+                                                    }
+                                                    else
+                                                    {
+                                                        File.Move(file.FullName, RejectedFolder + "//NotFound//" + file.Name);
+                                                    }
+                                                    
+                                                }
                                             }
-                                            else
+
+                                            if (flag)
                                             {
-                                                string Tmp1 = $"SELECT FileName FROM XMLDataUpload WHERE XMLFileName = '{NormalFileName}'";
-                                                SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
-                                                mainFileName = (string)cmd1.ExecuteScalar();
+                                                File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
+                                                sw.Write(" | Coppied  successfully | ");
+                                                if (File.Exists(BackupFolder + "\\" + file.Name))
+                                                {
+                                                    File.Delete(BackupFolder + "\\" + file.Name);
+                                                    sw.Write("Duplicate Name | ");
+                                                }
 
+                                                File.Move(file.FullName, BackupFolder + "\\" + file.Name);
+                                                sw.Write("Moved successfully");
+                                                sw.WriteLine();
+
+
+
+                                                if (SplitFileName[1] == "TT")
+                                                {
+                                                    string Tmp1 = $"SELECT BBFileName FROM RTGS WHERE XMLFileName = '{file.Name}'";
+                                                    SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
+                                                    mainFileName = (string)cmd1.ExecuteScalar();
+                                                    // Console.WriteLine("TT Entry :) ");
+                                                }
+                                                else
+                                                {
+                                                    string Tmp1 = $"SELECT FileName FROM XMLDataUpload WHERE XMLFileName = '{NormalFileName}'";
+                                                    SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
+                                                    mainFileName = (string)cmd1.ExecuteScalar();
+
+                                                }
+
+                                                string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName, FileName) VALUES(getdate(), 'File Moved From XML To T24 READ', '{NormalFileName}','{mainFileName}')";
+                                                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                                cmd.ExecuteScalar();
+
+                                                handleDuplicate.InsertFile(connection, file.Name, file.FullName, "xmlToRead");
+                                                AffectedFileCount++;
                                             }
 
-                                            string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName, FileName) VALUES(getdate(), 'File Moved From XML To T24 READ', '{NormalFileName}','{mainFileName}')";
-                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
-                                            cmd.ExecuteScalar();
-
-                                            handleDuplicate.InsertFile(connection, file.Name, file.FullName, "xmlToRead");
-                                            AffectedFileCount++;
 
                                         }
                                         catch (IOException e)
@@ -220,7 +283,9 @@ namespace OpusRTGS
         private readonly string DestinationFolder;
         private readonly string LogFolder;
         private readonly string ConnectionString;
+        private readonly XmlDocument doc;
         private readonly HandleDuplicate handleDuplicate;
+        private readonly Pack08T24Handle pack08T24Handle;
 
         public RTGSInbound()
         {
@@ -239,7 +304,10 @@ namespace OpusRTGS
             //LogFolder = @"D:\RTGSFiles\LogFiles\SATPToInbound";
             //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
+
+            doc = new XmlDocument();
             handleDuplicate = HandleDuplicate.getInstance();
+            pack08T24Handle = Pack08T24Handle.getInstance();
         }
 
         public void Run()
@@ -273,6 +341,16 @@ namespace OpusRTGS
                                         sw.Write(file.FullName);
                                         try
                                         {
+                                            doc.Load(file.FullName);
+                                            string MsgDefIdr = "N/A";
+                                            XmlNodeList elemList = doc.GetElementsByTagName("MsgDefIdr");
+                                            if (elemList.Count > 0)
+                                            {
+                                                MsgDefIdr = elemList[0].InnerText;
+                                            }
+
+                                            if (MsgDefIdr == "pacs.008.001.04") pack08T24Handle.InsertAsExpected(connection, file.FullName, file.Name);
+
                                             File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
                                             sw.Write(" | Coppied  successfully | ");
                                             if (File.Exists(BackupFolder + "\\" + file.Name))
@@ -1468,6 +1546,7 @@ namespace OpusRTGS
     public class Pack08T24Handle
     {
         private readonly XmlDocument doc;
+        private static Pack08T24Handle instance = new Pack08T24Handle();
         public Pack08T24Handle()
         {
             doc = new XmlDocument();
@@ -1497,7 +1576,7 @@ namespace OpusRTGS
                         }
                     }
 
-                    if(AccoutNumber != "N/A")
+                    if (AccoutNumber != "N/A")
                     {
                         string Tmp = $"INSERT INTO RTGSBatchTemounsExpec (FileName,AccountNumber,Amount,Status, initDateTime) VALUES('{fileName}','{AccoutNumber}','{amount}','notposted',getdate());";
                         SqlCommand cmd = new SqlCommand(Tmp, connection);
@@ -1511,6 +1590,10 @@ namespace OpusRTGS
                 Console.WriteLine(e.Message);
             }
 
+        }
+        public static Pack08T24Handle getInstance()
+        {
+            return instance;
         }
     }
 }
