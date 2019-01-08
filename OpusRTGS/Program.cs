@@ -28,10 +28,10 @@ namespace OpusRTGS
 
                     #region Operations
 
-                    rtgsStatusUpdate.Run();
+                    //rtgsStatusUpdate.Run();
 
-                    rtgsRead.Run();
-                    rtgsInbound.Run();
+                    //rtgsRead.Run();
+                    //rtgsInbound.Run();
 
                     //bbOutBoundData.Run();
 
@@ -200,7 +200,8 @@ namespace OpusRTGS
                                                     if (File.Exists(RejectedFolder + "//" + file.Name)) File.Delete(RejectedFolder + "//" + file.Name);
 
                                                     File.Move(file.FullName, RejectedFolder + "//" + file.Name);
-                                                }else if(fileStatusCheck == "success")
+                                                }
+                                                else if (fileStatusCheck == "success")
                                                 {
                                                     if (File.Exists(RejectedFolder + "//Dup//" + file.Name)) File.Delete(RejectedFolder + "//Dup//" + file.Name);
 
@@ -1186,7 +1187,7 @@ namespace OpusRTGS
                 {
                     DirectoryInfo info = new DirectoryInfo(SourceFolder);
                     FileInfo[] files = info.GetFiles("*.xml").ToArray();
-                    string FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId;
+                    string FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, CdtNbOfNtries, DbtNbOfNtries, CdtSum, DbtSum;
                     XmlDocument doc = new XmlDocument();
 
                     if (files.Count() != 0)
@@ -1196,7 +1197,8 @@ namespace OpusRTGS
                             connection.Open();
                             foreach (FileInfo file in files)
                             {
-                                FileName = MsgDefIdr = BizMsgIdr = CreDt = DebDt = Amt = AcctId = NtryRef = InstrId = AnyBIC = OrgnlInstrId = "N/A";
+                                FileName = MsgDefIdr = BizMsgIdr = CreDt = DebDt = AcctId = NtryRef = InstrId = AnyBIC = OrgnlInstrId = CdtNbOfNtries = DbtNbOfNtries = CdtSum = DbtSum = "N/A";
+                                Amt = "0";
 
                                 if (File.Exists(file.FullName))
                                 {
@@ -1220,7 +1222,7 @@ namespace OpusRTGS
                                             if (FileTypePart.Count() > 1)
                                             {
                                                 string TempName = FileTypePart[0] + FileTypePart[1];
-                                                if (TempName == "camt054")//For camt054 & camt052
+                                                if (TempName == "camt054")//For camt054
                                                 {
                                                     BizMsgIdr = InerTextOfTag(doc, "BizMsgIdr");
                                                     CreDt = InerTextOfTag(doc, "CreDt");
@@ -1246,11 +1248,29 @@ namespace OpusRTGS
                                                     InstrId = InerTextOfTag(doc, "InstrId");
                                                     AnyBIC = InerTextOfTag(doc, "AnyBIC");
 
+                                                    XmlNodeList TMnodes = doc.GetElementsByTagName("TtlCdtNtries");
+
+                                                    if (TMnodes.Count > 0)
+                                                    {
+                                                        for (int i = 0; i < TMnodes[0].ChildNodes.Count; i++)
+                                                            if (TMnodes[0].ChildNodes[i].Name == "NbOfNtries") CdtNbOfNtries = TMnodes[0].ChildNodes[i].InnerText;
+                                                            else if (TMnodes[0].ChildNodes[i].Name == "Sum") CdtSum = TMnodes[0].ChildNodes[i].InnerText;
+                                                    }
+
+                                                    TMnodes = doc.GetElementsByTagName("TtlDbtNtries");
+
+                                                    if (TMnodes.Count > 0)
+                                                    {
+                                                        for (int i = 0; i < TMnodes[0].ChildNodes.Count; i++)
+                                                            if (TMnodes[0].ChildNodes[i].Name == "NbOfNtries") DbtNbOfNtries = TMnodes[0].ChildNodes[i].InnerText;
+                                                            else if (TMnodes[0].ChildNodes[i].Name == "Sum") DbtSum = TMnodes[0].ChildNodes[i].InnerText;
+                                                    }
+
                                                     XmlNodeList nodes = doc.GetElementsByTagName("Amt");
                                                     foreach (XmlNode node in nodes)
                                                     {
                                                         Amt = node.InnerText;
-                                                        string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', getdate());";
+                                                        string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, DateTime, CdtNbOfNtries, CdtSum, DbtNbOfNtries, DbtSum )  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', getdate(), '{CdtNbOfNtries}', '{CdtSum}','{DbtNbOfNtries}','{DbtSum}');";
                                                         SqlCommand cmd = new SqlCommand(Tmp, connection);
                                                         cmd.ExecuteScalar();
                                                     }
