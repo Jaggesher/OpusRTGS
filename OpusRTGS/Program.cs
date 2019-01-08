@@ -28,6 +28,8 @@ namespace OpusRTGS
 
                     #region Operations
 
+                    rtgsStatusUpdate.Run();
+
                     rtgsRead.Run();
                     rtgsInbound.Run();
 
@@ -35,7 +37,7 @@ namespace OpusRTGS
 
                     //rtgsReturn.Run();//In Production.
 
-                    //rtgsStatusUpdate.Run();
+
 
                     //stapStatusUpdate.Run();//In Production
 
@@ -65,6 +67,7 @@ namespace OpusRTGS
         private readonly string DestinationFolder;
         private readonly string LogFolder;
         private readonly string RejectedFolder;
+        private readonly string RawBackupFolder;
         private readonly XmlDocument doc;
         private readonly string ConnectionString;
         private readonly HandleDuplicate handleDuplicate;
@@ -78,6 +81,7 @@ namespace OpusRTGS
             DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\To";
             LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
             RejectedFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BatchReject";
+            RawBackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\RAWXmlToREAD";
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
@@ -88,6 +92,7 @@ namespace OpusRTGS
             //DestinationFolder = @"X:\AGR.READ";
             //LogFolder = @"D:\RTGSFiles\LogFiles\xmlToRead";
             //RejectedFolder = @"";
+            //RawBackupFolder = @"";
             //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
 
@@ -129,15 +134,19 @@ namespace OpusRTGS
                                         {
                                             string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
                                             string[] SplitFileName = NormalFileName.Split('_');
-                                            string mainFileName = "Can't Find";
 
                                             bool flag = true;
 
                                             if (SplitFileName[1] != "TT")
                                             {
+                                                flag = false;
+
+                                                File.Copy(file.FullName, RawBackupFolder + "//" + file.Name, true);
+
                                                 doc.Load(file.FullName);
-                                                string AccountNumber, Amount;
-                                                AccountNumber = "N/A";
+                                                string AccountNumber, Amount, InstrId, xmlSorceFileName;
+
+                                                AccountNumber = InstrId = xmlSorceFileName = "N/A";
                                                 Amount = "0";
 
                                                 XmlNodeList elements = doc.GetElementsByTagName("CREDIT_ACCT_NO");
@@ -146,45 +155,59 @@ namespace OpusRTGS
                                                     AccountNumber = elements[0].InnerText;
                                                 }
 
-                                                elements = doc.GetElementsByTagName("DEBIT_AMOUNT");
 
+                                                elements = doc.GetElementsByTagName("DEBIT_AMOUNT");
                                                 if (elements.Count > 0)
                                                 {
                                                     Amount = elements[0].InnerText;
                                                 }
 
-                                                string Tmp1 = $"SELECT TOP 1 FileName FROM RTGSBatchTemounsExpec WHERE AccountNumber = '{AccountNumber}' AND AMOUNT = '{Amount}' AND Status = 'notposted'";
-                                                SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
-                                                string fileNameCheck = (string)cmd1.ExecuteScalar();
-                                                
-                                                if(fileNameCheck != null)
+
+                                                elements = doc.GetElementsByTagName("FILE_NAME");
+                                                if (elements.Count > 0)
                                                 {
-                                                    Tmp1 = $"UPDATE RTGSBatchTemounsExpec SET Status = 'posted', xmlFileName = '{file.Name}', T24DateTime = getdate() WHERE ID = (SELECT TOP 1 ID FROM RTGSBatchTemounsExpec WHERE AccountNumber = '{AccountNumber}' AND AMOUNT = '{Amount}' AND Status = 'notposted');";
+                                                    xmlSorceFileName = elements[0].InnerText;
+                                                    doc.DocumentElement.RemoveChild(elements[0]);
+                                                }
+
+
+                                                elements = doc.GetElementsByTagName("PAY_ID");
+                                                if (elements.Count > 0)
+                                                {
+                                                    InstrId = elements[0].InnerText;
+                                                    doc.DocumentElement.RemoveChild(elements[0]);
+                                                }
+
+
+                                                string Tmp1 = $"SELECT TOP 1 Status FROM RTGSBatchTemounsExpec WHERE  AMOUNT = '{Amount}' AND FileName ='{xmlSorceFileName}' AND InstrId ='{InstrId}'";
+                                                SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
+                                                string fileStatusCheck = (string)cmd1.ExecuteScalar();
+
+                                                if (fileStatusCheck == "notposted" || fileStatusCheck == "fail")
+                                                {
+                                                    Tmp1 = $"UPDATE RTGSBatchTemounsExpec SET Status = 'posted', xmlFileName = '{file.Name}', T24DateTime = getdate() WHERE AMOUNT = '{Amount}' AND FileName ='{xmlSorceFileName}' AND InstrId ='{InstrId}';";
                                                     cmd1 = new SqlCommand(Tmp1, connection);
                                                     cmd1.ExecuteScalar();
+                                                    doc.Save(file.FullName);
+                                                    flag = true;
                                                 }
-                                                else
+                                                else if (fileStatusCheck == null)
                                                 {
-                                                    flag = false;
+                                                    if (File.Exists(RejectedFolder + "//" + file.Name)) File.Delete(RejectedFolder + "//" + file.Name);
 
-                                                    Tmp1 = $"SELECT TOP 1 FileName FROM RTGSBatchTemounsExpec WHERE AccountNumber = '{AccountNumber}' AND AMOUNT = '{Amount}'";
-                                                    cmd1 = new SqlCommand(Tmp1, connection);
-                                                    fileNameCheck = (string) cmd1.ExecuteScalar();
+                                                    File.Move(file.FullName, RejectedFolder + "//" + file.Name);
+                                                }else if(fileStatusCheck == "success")
+                                                {
+                                                    if (File.Exists(RejectedFolder + "//Dup//" + file.Name)) File.Delete(RejectedFolder + "//Dup//" + file.Name);
 
-                                                    if(fileNameCheck != null)
-                                                    {
-                                                        File.Move(file.FullName, RejectedFolder + "//Dup//" + file.Name);
-                                                    }
-                                                    else
-                                                    {
-                                                        File.Move(file.FullName, RejectedFolder + "//NotFound//" + file.Name);
-                                                    }
-                                                    
+                                                    File.Move(file.FullName, RejectedFolder + "//Dup//" + file.Name);
                                                 }
                                             }
 
                                             if (flag)
                                             {
+                                                string mainFileName = "Can't Find";
+
                                                 File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
                                                 sw.Write(" | Coppied  successfully | ");
                                                 if (File.Exists(BackupFolder + "\\" + file.Name))
@@ -702,10 +725,10 @@ namespace OpusRTGS
         {
 
             #region Testing...  
-            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\RTGSStatus";
-            ConnectionString = @"Data Source=DESKTOP-ALPFNNL;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
-            SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\Source";//Assuming Test is your Folder
-            BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\backup";
+            LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\RTGSStatus";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\Source";//Assuming Test is your Folder
+            BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\backup";
             #endregion
 
             #region Deploy...
@@ -787,10 +810,26 @@ namespace OpusRTGS
                                                 cmdTm.Parameters.AddWithValue("@fileName", NormalFileName);
                                                 if (Status == "1")
                                                 {
+                                                    string myTemp = $"UPDATE RTGSBatchTemounsExpec SET Status='success', SuccessDate = getdate() WHERE xmlFileName = '{file.Name}';";
+                                                    SqlCommand Mycmd = new SqlCommand(myTemp, connection);
+                                                    Mycmd.ExecuteScalar();
+
                                                     cmdTm.Parameters.AddWithValue("@Remarks ", "Success");
                                                 }
                                                 else
                                                 {
+                                                    Console.WriteLine(file.Name);
+
+                                                    string myTemp = $"SELECT TOP 1 Status FROM  RTGSBatchTemounsExpec WHERE xmlFileName = '{file.Name}'";
+                                                    SqlCommand Mycmd = new SqlCommand(myTemp, connection);
+                                                    string MyStatus = (string)Mycmd.ExecuteScalar();
+
+                                                    if (MyStatus != "success")
+                                                    {
+                                                        myTemp = $"UPDATE RTGSBatchTemounsExpec SET Status='fail' WHERE xmlFileName = '{file.Name}';";
+                                                        Mycmd = new SqlCommand(myTemp, connection);
+                                                        Mycmd.ExecuteScalar();
+                                                    }
                                                     cmdTm.Parameters.AddWithValue("@Remarks ", "Transiction Fail");
                                                 }
                                                 cmdTm.ExecuteScalar();
@@ -1555,6 +1594,7 @@ namespace OpusRTGS
         {
             string AccoutNumber = "N/A";
             string amount = "0";
+            string InstrId = "N/A";
             try
             {
                 doc.Load(FullFileName);
@@ -1564,9 +1604,19 @@ namespace OpusRTGS
                 {
                     AccoutNumber = "N/A";
                     amount = "0";
+                    InstrId = "N/A";
+
                     for (int i = 0; i < element.ChildNodes.Count; i++)
                     {
-                        if (element.ChildNodes[i].Name == "IntrBkSttlmAmt")
+                        if (element.ChildNodes[i].Name == "PmtId")
+                        {
+
+                            foreach (XmlNode node in element.ChildNodes[i])
+                            {
+                                if (node.Name == "InstrId") InstrId = node.InnerText;
+                            }
+                        }
+                        else if (element.ChildNodes[i].Name == "IntrBkSttlmAmt")
                         {
                             amount = element.ChildNodes[i].InnerText;
                         }
@@ -1576,11 +1626,15 @@ namespace OpusRTGS
                         }
                     }
 
-                    if (AccoutNumber != "N/A")
+                    Console.WriteLine("Okkkk");
+
+                    if (AccoutNumber != "N/A" && InstrId != "N/A")
                     {
-                        string Tmp = $"INSERT INTO RTGSBatchTemounsExpec (FileName,AccountNumber,Amount,Status, initDateTime) VALUES('{fileName}','{AccoutNumber}','{amount}','notposted',getdate());";
+                        string Tmp = $"INSERT INTO RTGSBatchTemounsExpec (FileName,AccountNumber,Amount,Status, initDateTime, InstrId) VALUES('{fileName}','{AccoutNumber}','{amount}','notposted',getdate(),'{InstrId}');";
                         SqlCommand cmd = new SqlCommand(Tmp, connection);
                         cmd.ExecuteScalar();
+
+                        Console.WriteLine("Result");
                     }
                 }
 
