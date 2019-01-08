@@ -1320,6 +1320,19 @@ namespace OpusRTGS
                                                     cmd.ExecuteScalar();
 
                                                 }
+                                                else if (TempName == "pacs004")//pacs.002
+                                                {
+                                                    BizMsgIdr = InerTextOfTag(doc, "BizMsgIdr");
+                                                    CreDt = InerTextOfTag(doc, "CreDt");
+                                                    DebDt = InerTextOfTag(doc, "DebDt");
+                                                    OrgnlInstrId = InerTextOfTag(doc, "OrgnlInstrId");
+                                                    Amt = InerTextOfTag(doc, "IntrBkSttlmAmt");
+
+                                                    string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', getdate());";
+                                                    SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                                    cmd.ExecuteScalar();
+
+                                                }
                                                 else
                                                 {
                                                     //Console.WriteLine(MsgDefIdr);
