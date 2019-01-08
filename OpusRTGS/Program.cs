@@ -41,7 +41,7 @@ namespace OpusRTGS
 
                     //stapStatusUpdate.Run();//In Production
 
-                    //inboundFileProcess.Run();
+                    inboundFileProcess.Run();
                     #endregion
 
                     Console.WriteLine(".....DONE......");
@@ -71,6 +71,7 @@ namespace OpusRTGS
         private readonly XmlDocument doc;
         private readonly string ConnectionString;
         private readonly HandleDuplicate handleDuplicate;
+        private readonly SealXmlFile sealXmlFile;
 
 
         public RTGSRead()
@@ -97,6 +98,7 @@ namespace OpusRTGS
             #endregion
 
             handleDuplicate = HandleDuplicate.getInstance();
+            sealXmlFile = SealXmlFile.getInstance();
             doc = new XmlDocument();
         }
 
@@ -142,6 +144,8 @@ namespace OpusRTGS
                                                 flag = false;
 
                                                 File.Copy(file.FullName, RawBackupFolder + "//" + file.Name, true);
+
+                                                sealXmlFile.SealXml(RawBackupFolder + "//" + file.Name);
 
                                                 doc.Load(file.FullName);
                                                 string AccountNumber, Amount, InstrId, xmlSorceFileName;
@@ -818,8 +822,6 @@ namespace OpusRTGS
                                                 }
                                                 else
                                                 {
-                                                    Console.WriteLine(file.Name);
-
                                                     string myTemp = $"SELECT TOP 1 Status FROM  RTGSBatchTemounsExpec WHERE xmlFileName = '{file.Name}'";
                                                     SqlCommand Mycmd = new SqlCommand(myTemp, connection);
                                                     string MyStatus = (string)Mycmd.ExecuteScalar();
@@ -1155,8 +1157,8 @@ namespace OpusRTGS
         public InboundFileProcess()
         {
             #region Testing...
-            SourceFolder = @"D:\Opus\Development\Jogessor\newfile\InBoundData";
-            LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\InboundFileProcessLog";
+            SourceFolder = @"E:\Development\Jogessor\newfile\InBoundData";
+            LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\InboundFileProcessLog";
             ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
@@ -1626,16 +1628,13 @@ namespace OpusRTGS
                         }
                     }
 
-                    Console.WriteLine("Okkkk");
-
                     if (AccoutNumber != "N/A" && InstrId != "N/A")
                     {
                         string Tmp = $"INSERT INTO RTGSBatchTemounsExpec (FileName,AccountNumber,Amount,Status, initDateTime, InstrId) VALUES('{fileName}','{AccoutNumber}','{amount}','notposted',getdate(),'{InstrId}');";
                         SqlCommand cmd = new SqlCommand(Tmp, connection);
                         cmd.ExecuteScalar();
-
-                        Console.WriteLine("Result");
                     }
+
                 }
 
             }
