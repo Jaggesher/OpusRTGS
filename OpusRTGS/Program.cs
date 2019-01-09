@@ -31,7 +31,7 @@ namespace OpusRTGS
                     rtgsRead.Run();
                     rtgsInbound.Run();
                     bbOutBoundData.Run();
-                    rtgsReturn.Run();         
+                    rtgsReturn.Run();
                     stapStatusUpdate.Run();
                     inboundFileProcess.Run();
                     #endregion
@@ -156,6 +156,9 @@ namespace OpusRTGS
                                                 if (elements.Count > 0)
                                                 {
                                                     Amount = elements[0].InnerText;
+                                                    string[] ignoreDot = Amount.Split('.');
+                                                    if (ignoreDot.Count() > 0)
+                                                        Amount = ignoreDot[0];
                                                 }
 
 
@@ -1660,6 +1663,9 @@ namespace OpusRTGS
                         else if (element.ChildNodes[i].Name == "IntrBkSttlmAmt")
                         {
                             amount = element.ChildNodes[i].InnerText;
+                            string[] ignoreDot = amount.Split('.');
+                            if (ignoreDot.Count() > 0)
+                                amount = ignoreDot[0];
                         }
                         else if (element.ChildNodes[i].Name == "CdtrAcct")
                         {
