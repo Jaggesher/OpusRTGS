@@ -1335,10 +1335,11 @@ namespace OpusRTGS
                                                     CreDt = InerTextOfTag(doc, "CreDt");
                                                     DebDt = InerTextOfTag(doc, "DebDt");
                                                     OrgnlInstrId = InerTextOfTag(doc, "OrgnlInstrId");
+                                                    OrgnlMsgId = InerTextOfTag(doc, "OrgnlMsgId");
                                                     Amt = InerTextOfTag(doc, "IntrBkSttlmAmt");
                                                     CdtrAcct = InerTextOfTag(doc, "CdtrAcct");
 
-                                                    string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, CdtrAcct, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', '{CdtrAcct}', getdate());";
+                                                    string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, CdtrAcct,OrgnlMsgId, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', '{CdtrAcct}','{OrgnlMsgId}', getdate());";
                                                     SqlCommand cmd = new SqlCommand(Tmp, connection);
                                                     cmd.ExecuteScalar();
 
@@ -1349,10 +1350,11 @@ namespace OpusRTGS
                                                     CreDt = InerTextOfTag(doc, "CreDt");
                                                     DebDt = InerTextOfTag(doc, "DebDt");
                                                     OrgnlInstrId = InerTextOfTag(doc, "OrgnlInstrId");
+                                                    OrgnlMsgId = InerTextOfTag(doc, "OrgnlMsgId");
                                                     Amt = InerTextOfTag(doc, "IntrBkSttlmAmt");
                                                     CdtrAcct = InerTextOfTag(doc, "CdtrAcct");
 
-                                                    string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, CdtrAcct, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', '{CdtrAcct}', getdate());";
+                                                    string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, CdtrAcct, OrgnlMsgId, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', '{CdtrAcct}', '{OrgnlMsgId}', getdate());";
                                                     SqlCommand cmd = new SqlCommand(Tmp, connection);
                                                     cmd.ExecuteScalar();
 
