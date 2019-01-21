@@ -295,30 +295,24 @@ namespace OpusRTGS
 
                                                 if (SplitFileName[1] == "TT")
                                                 {
-                                                    //string Tmp1 = $"SELECT BBFileName FROM RTGS WHERE XMLFileName = '{file.Name}'";
+                                                    //string Tmp1 = $"SELECT isnull(BBFileName,'N/A') FROM RTGS WHERE XMLFileName = '{file.Name}'";
                                                     //SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
                                                     //mainFileName = (string)cmd1.ExecuteScalar();
 
-                                                   // Console.WriteLine("TT Entry :) ");
+                                                    // Console.WriteLine("TT Entry :) ");
                                                 }
                                                 else
                                                 {
-                                                    string Tmp1 = $"SELECT FileName FROM XMLDataUpload WHERE XMLFileName = '{NormalFileName}'";
+                                                    string Tmp1 = $"SELECT isnull(FileName,'N/A') FROM XMLDataUpload WHERE XMLFileName = '{NormalFileName}'";
                                                     SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
                                                     mainFileName = (string)cmd1.ExecuteScalar();
                                                     //Console.WriteLine("I Entry :) ");
-
                                                 }
-
-                                                mainFileName = mainFileName == null ? "N/A" : mainFileName;
-
-                                                //Console.WriteLine(mainFileName);
 
                                                 string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName, FileName) VALUES(getdate(), 'File Moved From XML To T24 READ', '{NormalFileName}','{mainFileName}')";
                                                 SqlCommand cmd = new SqlCommand(Tmp, connection);
                                                 cmd.ExecuteScalar();
 
-                                                //Console.WriteLine(Tmp);
                                                 AffectedFileCount++;
                                             }
                                             else
