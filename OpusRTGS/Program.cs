@@ -27,12 +27,12 @@ namespace OpusRTGS
                     Console.WriteLine("Executing...........");
 
                     #region Operations
-                    rtgsStatusUpdate.Run();
-                    rtgsRead.Run();
-                    rtgsInbound.Run();
-                    bbOutBoundData.Run();
-                    rtgsReturn.Run();
-                    stapStatusUpdate.Run();
+                    //rtgsStatusUpdate.Run();
+                    //rtgsRead.Run();
+                    //rtgsInbound.Run();
+                    //bbOutBoundData.Run();
+                    //rtgsReturn.Run();
+                    //stapStatusUpdate.Run();
                     inboundFileProcess.Run();
                     #endregion
 
@@ -1351,16 +1351,16 @@ namespace OpusRTGS
         public InboundFileProcess()
         {
             #region Testing...
-            //SourceFolder = @"E:\Development\Jogessor\newfile\InBoundData";
-            //LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\InboundFileProcessLog";
-            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            SourceFolder = @"E:\Development\Jogessor\newfile\InBoundData";
+            LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\InboundFileProcessLog";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
 
             #region Deploy...
-            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
-            LogFolder = @"D:\RTGSFiles\LogFiles\RTGSFileProcess";
-            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\RTGSFileProcess";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
             handleDuplicate = HandleDuplicate.getInstance();
         }
@@ -1380,7 +1380,7 @@ namespace OpusRTGS
                 {
                     DirectoryInfo info = new DirectoryInfo(SourceFolder);
                     FileInfo[] files = info.GetFiles("*.xml").ToArray();
-                    string FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, CdtNbOfNtries, DbtNbOfNtries, CdtSum, DbtSum, CdtrAcct, CdtDbtInd, OrgnlMsgId;
+                    string FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, CdtNbOfNtries, DbtNbOfNtries, CdtSum, DbtSum, CdtrAcct, CdtDbtInd, OrgnlMsgId, AddtlInf;
                     XmlDocument doc = new XmlDocument();
 
                     if (files.Count() != 0)
@@ -1390,7 +1390,7 @@ namespace OpusRTGS
                             connection.Open();
                             foreach (FileInfo file in files)
                             {
-                                FileName = MsgDefIdr = BizMsgIdr = CreDt = DebDt = AcctId = NtryRef = InstrId = AnyBIC = OrgnlInstrId = CdtNbOfNtries = DbtNbOfNtries = CdtSum = DbtSum = CdtrAcct = CdtDbtInd = OrgnlMsgId = "N/A";
+                                FileName = MsgDefIdr = BizMsgIdr = CreDt = DebDt = AcctId = NtryRef = InstrId = AnyBIC = OrgnlInstrId = CdtNbOfNtries = DbtNbOfNtries = CdtSum = DbtSum = CdtrAcct = CdtDbtInd = OrgnlMsgId = AddtlInf= "N/A";
                                 Amt = "0";
 
                                 if (File.Exists(file.FullName))
@@ -1522,13 +1522,14 @@ namespace OpusRTGS
                                                     OrgnlMsgId = InerTextOfTag(doc, "OrgnlMsgId");
                                                     Amt = InerTextOfTag(doc, "IntrBkSttlmAmt");
                                                     CdtrAcct = InerTextOfTag(doc, "CdtrAcct");
+                                                    AddtlInf = InerTextOfTag(doc, "AddtlInf");
 
-                                                    string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, CdtrAcct,OrgnlMsgId, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', '{CdtrAcct}','{OrgnlMsgId}', getdate());";
+                                                    string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, CdtrAcct,OrgnlMsgId,AddtlInf, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', '{CdtrAcct}','{OrgnlMsgId}', '{AddtlInf}', getdate());";
                                                     SqlCommand cmd = new SqlCommand(Tmp, connection);
                                                     cmd.ExecuteScalar();
 
                                                 }
-                                                else if (TempName == "pacs004")//pacs.002
+                                                else if (TempName == "pacs004")//pacs.004
                                                 {
                                                     BizMsgIdr = InerTextOfTag(doc, "BizMsgIdr");
                                                     CreDt = InerTextOfTag(doc, "CreDt");
@@ -1537,8 +1538,8 @@ namespace OpusRTGS
                                                     OrgnlMsgId = InerTextOfTag(doc, "OrgnlMsgId");
                                                     Amt = InerTextOfTag(doc, "IntrBkSttlmAmt");
                                                     CdtrAcct = InerTextOfTag(doc, "CdtrAcct");
-
-                                                    string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, CdtrAcct, OrgnlMsgId, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', '{CdtrAcct}', '{OrgnlMsgId}', getdate());";
+                                                    AddtlInf = InerTextOfTag(doc, "AddtlInf");
+                                                    string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, CdtrAcct, OrgnlMsgId, AddtlInf, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', '{CdtrAcct}', '{OrgnlMsgId}','{AddtlInf}', getdate());";
                                                     SqlCommand cmd = new SqlCommand(Tmp, connection);
                                                     cmd.ExecuteScalar();
 
@@ -1634,17 +1635,17 @@ namespace OpusRTGS
         public HandleDuplicate()
         {
             #region Testing...
-            //xmlToREAD = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\xmlToREAD";
-            //outToInbound = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\outToInbound";
-            //BBOutboudToInput = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\BBOutboudToInput";
-            //ReturnToInput = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\ReturnToInput";
+            xmlToREAD = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\xmlToREAD";
+            outToInbound = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\outToInbound";
+            BBOutboudToInput = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\BBOutboudToInput";
+            ReturnToInput = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\ReturnToInput";
             #endregion
 
             #region Deploy
-            xmlToREAD = @"D:\RTGSFiles\Duplicate\xmlToREAD";
-            outToInbound = @"D:\RTGSFiles\Duplicate\outToInbound";
-            BBOutboudToInput = @"D:\RTGSFiles\Duplicate\BBOutToInput";
-            ReturnToInput = @"D:\RTGSFiles\Duplicate\ReturnToInput";
+            //xmlToREAD = @"D:\RTGSFiles\Duplicate\xmlToREAD";
+            //outToInbound = @"D:\RTGSFiles\Duplicate\outToInbound";
+            //BBOutboudToInput = @"D:\RTGSFiles\Duplicate\BBOutToInput";
+            //ReturnToInput = @"D:\RTGSFiles\Duplicate\ReturnToInput";
             #endregion
 
         }
