@@ -1039,6 +1039,13 @@ namespace OpusRTGS
                                                 cmdTm.Parameters.AddWithValue("@ProcessType", "TT");
                                                 cmdTm.ExecuteScalar();
 
+                                                if(SplitFileName[2] == "IO")
+                                                {
+                                                    string myTemp = $"UPDATE ReturnRTGS SET TrStatus = '{Status}' WHERE FileName = '{file.Name}';";
+                                                    SqlCommand Mycmd = new SqlCommand(myTemp, connection);
+                                                    Mycmd.ExecuteScalar();
+                                                }
+
                                                 //Console.WriteLine("TT");
                                             }
 
