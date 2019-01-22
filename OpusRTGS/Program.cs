@@ -27,12 +27,12 @@ namespace OpusRTGS
                     Console.WriteLine("Executing...........");
 
                     #region Operations
-                    //rtgsStatusUpdate.Run();
-                    //rtgsRead.Run();
-                    //rtgsInbound.Run();
-                    //bbOutBoundData.Run();
-                    //rtgsReturn.Run();
-                    //stapStatusUpdate.Run();
+                    rtgsStatusUpdate.Run();
+                    rtgsRead.Run();
+                    rtgsInbound.Run();
+                    bbOutBoundData.Run();
+                    rtgsReturn.Run();
+                    stapStatusUpdate.Run();
                     inboundFileProcess.Run();
                     #endregion
 
@@ -277,7 +277,7 @@ namespace OpusRTGS
 
                                             if (flag)
                                             {
-                                                string mainFileName = "Can't Find";
+                                                string mainFileName = "N/A";
 
                                                 File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
                                                 sw.Write(" | Coppied  successfully | ");
@@ -1352,16 +1352,16 @@ namespace OpusRTGS
         public InboundFileProcess()
         {
             #region Testing...
-            SourceFolder = @"E:\Development\Jogessor\newfile\InBoundData";
-            LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\InboundFileProcessLog";
-            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            //SourceFolder = @"E:\Development\Jogessor\newfile\InBoundData";
+            //LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\InboundFileProcessLog";
+            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
 
             #region Deploy...
-            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
-            //LogFolder = @"D:\RTGSFiles\LogFiles\RTGSFileProcess";
-            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
+            LogFolder = @"D:\RTGSFiles\LogFiles\RTGSFileProcess";
+            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
             handleDuplicate = HandleDuplicate.getInstance();
         }
@@ -1670,17 +1670,17 @@ namespace OpusRTGS
         public HandleDuplicate()
         {
             #region Testing...
-            xmlToREAD = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\xmlToREAD";
-            outToInbound = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\outToInbound";
-            BBOutboudToInput = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\BBOutboudToInput";
-            ReturnToInput = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\ReturnToInput";
+            //xmlToREAD = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\xmlToREAD";
+            //outToInbound = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\outToInbound";
+            //BBOutboudToInput = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\BBOutboudToInput";
+            //ReturnToInput = @"E:\Development\Jogessor\2018-12-25\RTGS\Duplicate\ReturnToInput";
             #endregion
 
             #region Deploy
-            //xmlToREAD = @"D:\RTGSFiles\Duplicate\xmlToREAD";
-            //outToInbound = @"D:\RTGSFiles\Duplicate\outToInbound";
-            //BBOutboudToInput = @"D:\RTGSFiles\Duplicate\BBOutToInput";
-            //ReturnToInput = @"D:\RTGSFiles\Duplicate\ReturnToInput";
+            xmlToREAD = @"D:\RTGSFiles\Duplicate\xmlToREAD";
+            outToInbound = @"D:\RTGSFiles\Duplicate\outToInbound";
+            BBOutboudToInput = @"D:\RTGSFiles\Duplicate\BBOutToInput";
+            ReturnToInput = @"D:\RTGSFiles\Duplicate\ReturnToInput";
             #endregion
 
         }
