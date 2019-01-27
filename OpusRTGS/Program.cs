@@ -69,24 +69,24 @@ namespace OpusRTGS
         public RTGSRead()
         {
             #region Testing...
-            //SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\From";
-            //BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\Backup";
-            //DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\To";
-            //LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
-            //RejectedFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BatchReject";
-            //RawBackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\RAWXmlToREAD";
-            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\From";
+            BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\Backup";
+            DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\To";
+            LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
+            RejectedFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BatchReject";
+            RawBackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\RAWXmlToREAD";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
 
             #region Deploy...
-            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\xmldata";
-            BackupFolder = @"D:\RTGSFiles\xmlToREAD";
-            DestinationFolder = @"X:\AGR.READ";
-            LogFolder = @"D:\RTGSFiles\LogFiles\xmlToRead";
-            RejectedFolder = @"D:\RTGSFiles\BatchReject";
-            RawBackupFolder = @"D:\RTGSFiles\RAWXmlToREAD";
-            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\xmldata";
+            //BackupFolder = @"D:\RTGSFiles\xmlToREAD";
+            //DestinationFolder = @"X:\AGR.READ";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\xmlToRead";
+            //RejectedFolder = @"D:\RTGSFiles\BatchReject";
+            //RawBackupFolder = @"D:\RTGSFiles\RAWXmlToREAD";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
 
             handleDuplicate = HandleDuplicate.getInstance();
@@ -129,9 +129,9 @@ namespace OpusRTGS
                                             string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
                                             string[] SplitFileName = NormalFileName.Split('_');
 
-                                            bool flag = true;
+                                            bool flag = false;
 
-                                            if (SplitFileName[1] != "TT")
+                                            if (SplitFileName[1] == "I")
                                             {
                                                 flag = false;
 
@@ -217,7 +217,94 @@ namespace OpusRTGS
                                                     File.Move(file.FullName, RejectedFolder + "//Dup//" + file.Name);
                                                 }
                                             }
-                                            else
+                                            else if (SplitFileName[1] == "IB")
+                                            {
+                                                flag = false;
+
+                                                File.Copy(file.FullName, RawBackupFolder + "//" + file.Name, true);
+
+                                                sealXmlFile.SealXml(RawBackupFolder + "//" + file.Name);
+
+                                                doc.Load(file.FullName);
+                                                string AccountNumber, Amount, InstrId, xmlSorceFileName;
+
+                                                AccountNumber = InstrId = xmlSorceFileName = "N/A";
+                                                Amount = "0";
+
+                                                XmlNodeList elements = doc.GetElementsByTagName("CREDIT_ACCT_NO");
+                                                if (elements.Count > 0)
+                                                {
+                                                    AccountNumber = elements[0].InnerText;
+                                                }
+
+
+                                                elements = doc.GetElementsByTagName("DEBIT_AMOUNT");
+                                                if (elements.Count > 0)
+                                                {
+                                                    Amount = elements[0].InnerText;
+                                                    string[] ignoreDot = Amount.Split('.');
+                                                    if (ignoreDot.Count() > 0)
+                                                        Amount = ignoreDot[0];
+                                                }
+
+
+                                                elements = doc.GetElementsByTagName("FILE_NAME");
+                                                if (elements.Count > 0)
+                                                {
+                                                    xmlSorceFileName = elements[0].InnerText;
+                                                    doc.DocumentElement.RemoveChild(elements[0]);
+                                                }
+
+
+                                                elements = doc.GetElementsByTagName("PAY_ID");
+                                                if (elements.Count > 0)
+                                                {
+                                                    InstrId = elements[0].InnerText;
+                                                    doc.DocumentElement.RemoveChild(elements[0]);
+                                                }
+
+
+                                                string Tmp1 = $"SELECT TOP 1 Status FROM RTGSBatchIBTemounsExpec WHERE  AMOUNT = '{Amount}' AND FileName ='{xmlSorceFileName}' AND InstrId ='{InstrId}'";
+                                                SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
+                                                string fileStatusCheck = (string)cmd1.ExecuteScalar();
+
+                                                if (fileStatusCheck == "notposted" || fileStatusCheck == "fail")
+                                                {
+                                                    Tmp1 = $"UPDATE RTGSBatchIBTemounsExpec SET Status = 'posted', xmlFileName = '{file.Name}', T24DateTime = getdate() WHERE AMOUNT = '{Amount}' AND FileName ='{xmlSorceFileName}' AND InstrId ='{InstrId}';";
+                                                    cmd1 = new SqlCommand(Tmp1, connection);
+                                                    cmd1.ExecuteScalar();
+
+
+                                                    Tmp1 = $"INSERT INTO RTGSBatchGetKeeperLog (FileName,Remarks,DateTime,Type) VALUES('{file.Name}','File Pass With status {fileStatusCheck}',getdate(),'InbB');";
+                                                    cmd1 = new SqlCommand(Tmp1, connection);
+                                                    cmd1.ExecuteScalar();
+
+                                                    doc.Save(file.FullName);
+                                                    flag = true;
+                                                }
+                                                else if (fileStatusCheck == null)
+                                                {
+                                                    if (File.Exists(RejectedFolder + "//" + file.Name)) File.Delete(RejectedFolder + "//" + file.Name);
+
+                                                    Tmp1 = $"INSERT INTO RTGSBatchGetKeeperLog (FileName,Remarks,DateTime,Type) VALUES('{file.Name}','File Blocked With status Not Expected',getdate(),'InbB');";
+                                                    cmd1 = new SqlCommand(Tmp1, connection);
+                                                    cmd1.ExecuteScalar();
+
+                                                    File.Move(file.FullName, RejectedFolder + "//" + file.Name);
+                                                }
+                                                else if (fileStatusCheck == "success")
+                                                {
+                                                    Tmp1 = $"INSERT INTO RTGSBatchGetKeeperLog (FileName,Remarks,DateTime,Type) VALUES('{file.Name}','File Blocked With status Duplicate',getdate(),'InbB');";
+                                                    cmd1 = new SqlCommand(Tmp1, connection);
+                                                    cmd1.ExecuteScalar();
+
+                                                    if (File.Exists(RejectedFolder + "//Dup//" + file.Name)) File.Delete(RejectedFolder + "//Dup//" + file.Name);
+
+                                                    File.Move(file.FullName, RejectedFolder + "//Dup//" + file.Name);
+                                                }
+
+                                            }
+                                            else if (SplitFileName[1] == "TT")
                                             {
                                                 flag = false;
                                                 doc.Load(file.FullName);
