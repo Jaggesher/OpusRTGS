@@ -1011,6 +1011,13 @@ namespace OpusRTGS
                                                 cmdTm.ExecuteScalar();
 
                                                 // Console.WriteLine("I");
+                                            }else if (SplitFileName[1] == "IB")
+                                            {
+                                                string Tmp = $"UPDATE BankToBankBorrow SET TrStatus = '{Status}', TraNumber = '{TranNumber}', ErrDescription = '{TranNumber}' WHERE XMLFileName = '{NormalFileName}'";
+                                                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                                cmd.ExecuteScalar();
+
+                                                Console.WriteLine("IB");
                                             }
                                             else if (SplitFileName[1] == "TT")
                                             {
