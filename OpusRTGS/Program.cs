@@ -384,28 +384,30 @@ namespace OpusRTGS
         private readonly XmlDocument doc;
         private readonly HandleDuplicate handleDuplicate;
         private readonly Pack08T24Handle pack08T24Handle;
+        private readonly Pack09T24Handle pack09T24Handle;
 
         public RTGSInbound()
         {
             #region Testing...
-            //SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\From";
-            //BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\Backup";
-            //DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\To";
-            //LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
-            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\From";
+            BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\Backup";
+            DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\To";
+            LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
             #region Deploy...
-            SourceFolder = @"D:\distr_STPAdapter_v21_36\output";
-            BackupFolder = @"D:\RTGSFiles\SATPToInbound";
-            DestinationFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
-            LogFolder = @"D:\RTGSFiles\LogFiles\SATPToInbound";
-            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolder = @"D:\distr_STPAdapter_v21_36\output";
+            //BackupFolder = @"D:\RTGSFiles\SATPToInbound";
+            //DestinationFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\SATPToInbound";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
 
             doc = new XmlDocument();
             handleDuplicate = HandleDuplicate.getInstance();
             pack08T24Handle = Pack08T24Handle.getInstance();
+            pack09T24Handle = Pack09T24Handle.getInstance();
         }
 
         public void Run()
@@ -448,6 +450,7 @@ namespace OpusRTGS
                                             }
 
                                             if (MsgDefIdr == "pacs.008.001.04") pack08T24Handle.InsertAsExpected(connection, file.FullName, file.Name);
+                                            else if (MsgDefIdr == "pacs.009.001.04") pack09T24Handle.InsertAsExpected(connection,file.FullName, file.Name);
 
                                             File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
                                             sw.Write(" | Coppied  successfully | ");
@@ -1017,6 +1020,28 @@ namespace OpusRTGS
                                                 string Tmp = $"UPDATE BankToBankBorrow SET TrStatus = '{Status}', TraNumber = '{TranNumber}', ErrDescription = '{TranNumber}' WHERE XMLFileName = '{NormalFileName}'";
                                                 SqlCommand cmd = new SqlCommand(Tmp, connection);
                                                 cmd.ExecuteScalar();
+
+                                                if (Status == "1")
+                                                {
+                                                    string myTemp = $"UPDATE RTGSBatchIBTemounsExpec SET Status='success', SuccessDate = getdate() WHERE xmlFileName = '{file.Name}';";
+                                                    SqlCommand Mycmd = new SqlCommand(myTemp, connection);
+                                                    Mycmd.ExecuteScalar();
+
+                                                    
+                                                }
+                                                else
+                                                {
+                                                    string myTemp = $"SELECT TOP 1 Status FROM  RTGSBatchIBTemounsExpec WHERE xmlFileName = '{file.Name}'";
+                                                    SqlCommand Mycmd = new SqlCommand(myTemp, connection);
+                                                    string MyStatus = (string)Mycmd.ExecuteScalar();
+
+                                                    if (MyStatus != "success")
+                                                    {
+                                                        myTemp = $"UPDATE RTGSBatchIBTemounsExpec SET Status='fail' WHERE xmlFileName = '{file.Name}';";
+                                                        Mycmd = new SqlCommand(myTemp, connection);
+                                                        Mycmd.ExecuteScalar();
+                                                    }
+                                                }
 
                                                 Console.WriteLine("IB");
                                             }
