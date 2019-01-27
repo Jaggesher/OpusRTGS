@@ -69,24 +69,24 @@ namespace OpusRTGS
         public RTGSRead()
         {
             #region Testing...
-            SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\From";
-            BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\Backup";
-            DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\To";
-            LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
-            RejectedFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BatchReject";
-            RawBackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\RAWXmlToREAD";
-            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            //SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\From";
+            //BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\Backup";
+            //DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\XmlDataToREAD\To";
+            //LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
+            //RejectedFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BatchReject";
+            //RawBackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\RAWXmlToREAD";
+            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
 
             #region Deploy...
-            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\xmldata";
-            //BackupFolder = @"D:\RTGSFiles\xmlToREAD";
-            //DestinationFolder = @"X:\AGR.READ";
-            //LogFolder = @"D:\RTGSFiles\LogFiles\xmlToRead";
-            //RejectedFolder = @"D:\RTGSFiles\BatchReject";
-            //RawBackupFolder = @"D:\RTGSFiles\RAWXmlToREAD";
-            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\xmldata";
+            BackupFolder = @"D:\RTGSFiles\xmlToREAD";
+            DestinationFolder = @"X:\AGR.READ";
+            LogFolder = @"D:\RTGSFiles\LogFiles\xmlToRead";
+            RejectedFolder = @"D:\RTGSFiles\BatchReject";
+            RawBackupFolder = @"D:\RTGSFiles\RAWXmlToREAD";
+            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
 
             handleDuplicate = HandleDuplicate.getInstance();
@@ -476,19 +476,19 @@ namespace OpusRTGS
         public RTGSInbound()
         {
             #region Testing...
-            SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\From";
-            BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\Backup";
-            DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\To";
-            LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
-            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            //SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\From";
+            //BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\Backup";
+            //DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\SATP_IN\To";
+            //LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\SATP_IN";
+            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
             #region Deploy...
-            //SourceFolder = @"D:\distr_STPAdapter_v21_36\output";
-            //BackupFolder = @"D:\RTGSFiles\SATPToInbound";
-            //DestinationFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
-            //LogFolder = @"D:\RTGSFiles\LogFiles\SATPToInbound";
-            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            SourceFolder = @"D:\distr_STPAdapter_v21_36\output";
+            BackupFolder = @"D:\RTGSFiles\SATPToInbound";
+            DestinationFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
+            LogFolder = @"D:\RTGSFiles\LogFiles\SATPToInbound";
+            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
 
             doc = new XmlDocument();
@@ -537,7 +537,7 @@ namespace OpusRTGS
                                             }
 
                                             if (MsgDefIdr == "pacs.008.001.04") pack08T24Handle.InsertAsExpected(connection, file.FullName, file.Name);
-                                            else if (MsgDefIdr == "pacs.009.001.04") pack09T24Handle.InsertAsExpected(connection,file.FullName, file.Name);
+                                            else if (MsgDefIdr == "pacs.009.001.04") pack09T24Handle.InsertAsExpected(connection, file.FullName, file.Name);
 
                                             File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
                                             sw.Write(" | Coppied  successfully | ");
@@ -1114,7 +1114,7 @@ namespace OpusRTGS
                                                     SqlCommand Mycmd = new SqlCommand(myTemp, connection);
                                                     Mycmd.ExecuteScalar();
 
-                                                    
+
                                                 }
                                                 else
                                                 {
@@ -1130,7 +1130,7 @@ namespace OpusRTGS
                                                     }
                                                 }
 
-                                                Console.WriteLine("IB");
+                                               // Console.WriteLine("IB");
                                             }
                                             else if (SplitFileName[1] == "TT")
                                             {
@@ -1644,6 +1644,36 @@ namespace OpusRTGS
                                                     Amt = InerTextOfTag(doc, "IntrBkSttlmAmt");
                                                     CdtrAcct = InerTextOfTag(doc, "CdtrAcct");
                                                     AddtlInf = InerTextOfTag(doc, "AddtlInf");
+
+                                                    string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, CdtrAcct,OrgnlMsgId,AddtlInf, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', '{CdtrAcct}','{OrgnlMsgId}', '{AddtlInf}', getdate());";
+                                                    SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                                    cmd.ExecuteScalar();
+
+                                                }
+                                                else if (TempName == "camt025")
+                                                {
+                                                    
+
+                                                    BizMsgIdr = InerTextOfTag(doc, "BizMsgIdr");
+                                                    CreDt = InerTextOfTag(doc, "CreDt");
+                                                    DebDt = InerTextOfTag(doc, "DebDt");
+
+
+                                                    XmlNodeList MyelemList = doc.GetElementsByTagName("OrgnlMsgId");
+                                                    if (MyelemList.Count > 0)
+                                                    {
+
+                                                        for (int i = 0; i < MyelemList[0].ChildNodes.Count; i++)
+                                                            if (MyelemList[0].ChildNodes[i].Name == "MsgId") OrgnlMsgId = MyelemList[0].ChildNodes[i].InnerText;
+                                                    }
+
+                                                    MyelemList = doc.GetElementsByTagName("ReqHdlg");
+                                                    if (MyelemList.Count > 0)
+                                                    {
+
+                                                        for (int i = 0; i < MyelemList[0].ChildNodes.Count; i++)
+                                                            if (MyelemList[0].ChildNodes[i].Name == "Desc") AddtlInf = MyelemList[0].ChildNodes[i].InnerText;
+                                                    }
 
                                                     string Tmp = $"insert into InboundDataBatch (FileName, MsgDefIdr, BizMsgIdr, CreDt, DebDt, Amt, AcctId, NtryRef, InstrId, AnyBIC, OrgnlInstrId, CdtrAcct,OrgnlMsgId,AddtlInf, DateTime)  VALUES('{file.Name}', '{MsgDefIdr}', '{BizMsgIdr}', '{CreDt}', '{DebDt}', '{Amt}', '{AcctId}', '{NtryRef}', '{InstrId}', '{AnyBIC}', '{OrgnlInstrId}', '{CdtrAcct}','{OrgnlMsgId}', '{AddtlInf}', getdate());";
                                                     SqlCommand cmd = new SqlCommand(Tmp, connection);
