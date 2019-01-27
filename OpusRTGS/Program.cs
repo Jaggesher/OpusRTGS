@@ -783,6 +783,7 @@ namespace OpusRTGS
                                                 sw.WriteLine();
                                                 string Tmp1 = $"INSERT INTO RTGSBatchGetKeeperLog (FileName,Remarks,DateTime,Type) VALUES('{file.Name}','File block With status Already posted To BB',getdate(),'BB');";
                                                 SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
+                                                cmd1.ExecuteScalar();
 
                                                 if (File.Exists(RejectFolder + "//" + file.Name)) File.Delete(RejectFolder + "//" + file.Name);
                                                 File.Move(file.FullName, RejectFolder + "//" + file.Name);
@@ -793,6 +794,7 @@ namespace OpusRTGS
                                                 sw.WriteLine();
                                                 string Tmp1 = $"INSERT INTO RTGSBatchGetKeeperLog (FileName,Remarks,DateTime,Type) VALUES('{file.Name}','File block With status Account Or Amount Mitchmatch',getdate(),'BB');";
                                                 SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
+                                                cmd1.ExecuteScalar();
 
                                                 if (File.Exists(RejectFolder + "//" + file.Name)) File.Delete(RejectFolder + "//" + file.Name);
                                                 File.Move(file.FullName, RejectFolder + "//" + file.Name);
