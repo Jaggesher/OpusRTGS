@@ -1011,7 +1011,8 @@ namespace OpusRTGS
                                                 cmdTm.ExecuteScalar();
 
                                                 // Console.WriteLine("I");
-                                            }else if (SplitFileName[1] == "IB")
+                                            }
+                                            else if (SplitFileName[1] == "IB")
                                             {
                                                 string Tmp = $"UPDATE BankToBankBorrow SET TrStatus = '{Status}', TraNumber = '{TranNumber}', ErrDescription = '{TranNumber}' WHERE XMLFileName = '{NormalFileName}'";
                                                 SqlCommand cmd = new SqlCommand(Tmp, connection);
@@ -1938,4 +1939,76 @@ namespace OpusRTGS
             return instance;
         }
     }
+
+    public class Pack09T24Handle
+    {
+        private readonly XmlDocument doc;
+        private static Pack09T24Handle instance = new Pack09T24Handle();
+        public Pack09T24Handle()
+        {
+            doc = new XmlDocument();
+        }
+        public void InsertAsExpected(SqlConnection connection, string FullFileName, string fileName)
+        {
+            string AccoutNumber = "N/A";
+            string amount = "0";
+            string InstrId = "N/A";
+            try
+            {
+                doc.Load(FullFileName);
+                XmlNodeList elements = doc.GetElementsByTagName("CdtTrfTxInf");
+
+                foreach (XmlNode element in elements)
+                {
+                    AccoutNumber = "N/A";
+                    amount = "0";
+                    InstrId = "N/A";
+
+                    for (int i = 0; i < element.ChildNodes.Count; i++)
+                    {
+                        if (element.ChildNodes[i].Name == "PmtId")
+                        {
+
+                            foreach (XmlNode node in element.ChildNodes[i])
+                            {
+                                if (node.Name == "InstrId") InstrId = node.InnerText;
+                            }
+                        }
+                        else if (element.ChildNodes[i].Name == "IntrBkSttlmAmt")
+                        {
+                            amount = element.ChildNodes[i].InnerText;
+                            string[] ignoreDot = amount.Split('.');
+                            if (ignoreDot.Count() > 0)
+                                amount = ignoreDot[0];
+                        }
+                        else if (element.ChildNodes[i].Name == "CdtrAcct")
+                        {
+                            AccoutNumber = element.ChildNodes[i].InnerText;
+                        }
+                    }
+
+                    if (AccoutNumber != "N/A" && InstrId != "N/A")
+                    {
+                        string Tmp = $"INSERT INTO RTGSBatchIBTemounsExpec (FileName,AccountNumber,Amount,Status, initDateTime, InstrId) VALUES('{fileName}','{AccoutNumber}','{amount}','notposted',getdate(),'{InstrId}');";
+                        SqlCommand cmd = new SqlCommand(Tmp, connection);
+                        cmd.ExecuteScalar();
+                    }
+
+                }
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+        }
+
+        public static Pack09T24Handle getInstance()
+        {
+            return instance;
+        }
+
+    }
+
 }
