@@ -1169,7 +1169,7 @@ namespace OpusRTGS
                                                 }
                                                 else if (SplitFileName[2] == "CM")
                                                 {
-                                                    string myTemp = $"UPDATE CallMoney SET TrStatus = '{Status}' WHERE XMLFileName = '{file.Name}';";
+                                                    string myTemp = $"UPDATE CallMoney SET TraNumber = '{TranNumber}', TrStatus = '{Status}', ErrDescription = '{ErrMessage}' WHERE XMLFileName = '{FileName}'";
                                                     SqlCommand Mycmd = new SqlCommand(myTemp, connection);
                                                     Mycmd.ExecuteScalar();
                                                 }
