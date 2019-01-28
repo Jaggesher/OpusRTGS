@@ -322,6 +322,17 @@ namespace OpusRTGS
                                                     AccountNumber = elements[0].InnerText;
                                                 }
 
+                                                if(SplitFileName[2] == "CM")
+                                                {
+                                                    elements = doc.GetElementsByTagName("OrgCrAcct");
+                                                    if (elements.Count > 0)
+                                                    {
+                                                        AccountNumber = elements[0].InnerText;
+                                                        doc.DocumentElement.RemoveChild(elements[0]);
+                                                    }
+                                                }
+                                                
+
                                                 elements = doc.GetElementsByTagName("DEBIT_AMOUNT");
                                                 if (elements.Count > 0)
                                                 {
@@ -682,9 +693,9 @@ namespace OpusRTGS
                                         {
                                             doc.Load(file.FullName);
                                             string AccountNumber, Amount, InstrId;
-                                            string AccountNumberQ, AmountQ, StatusQ, BBxmlFileNameQ;
+                                            string AccountNumberQ, AmountQ, StatusQ, BBxmlFileNameQ, MsgDefIdr;
 
-                                            AccountNumber = InstrId = AccountNumberQ = StatusQ = BBxmlFileNameQ = "N/A";
+                                            AccountNumber = InstrId = AccountNumberQ = StatusQ = BBxmlFileNameQ = MsgDefIdr = "N/A";
                                             Amount = AmountQ = "0";
 
                                             XmlNodeList elements = doc.GetElementsByTagName("DbtrAcct");
@@ -692,6 +703,22 @@ namespace OpusRTGS
                                             {
                                                 AccountNumber = elements[0].InnerText;
                                             }
+
+                                            elements = doc.GetElementsByTagName("MsgDefIdr");
+                                            if (elements.Count > 0)
+                                            {
+                                                MsgDefIdr = elements[0].InnerText;
+                                            }
+
+                                            if(MsgDefIdr == "pacs.009.001.04")
+                                            {
+                                                elements = doc.GetElementsByTagName("CdtrAcct");
+                                                if (elements.Count > 0)
+                                                {
+                                                    AccountNumber = elements[0].InnerText;
+                                                }
+                                            }
+
 
                                             elements = doc.GetElementsByTagName("IntrBkSttlmAmt");
                                             if (elements.Count > 0)
@@ -1325,16 +1352,17 @@ namespace OpusRTGS
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             cmd.ExecuteScalar();
                                             cmdTm.ExecuteScalar();
-                                        }else if (SplitFileName.Length > 2 && SplitFileName[1] == "BB" && SplitFileName[2] == "CM")
+                                        }
+                                        else if (SplitFileName.Length > 2 && SplitFileName[1] == "BB" && SplitFileName[2] == "CM")
                                         {
                                             string Tmp = $"UPDATE CallMoney SET BBTraNumber = '{resultData}', BBErrDescription = 'N/A', BBTrStatus = '1' WHERE BBFileName = '{NormalizeFileName}'";
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             cmd.ExecuteScalar();
                                         }
 
-                                            //Aditional Logic
+                                        //Aditional Logic
 
-                                            handleDuplicate.InsertUpdateFile(connection, file.Name, "SATPAckErr");
+                                        handleDuplicate.InsertUpdateFile(connection, file.Name, "SATPAckErr");
 
                                         AffectedFileCount++;
                                     }
