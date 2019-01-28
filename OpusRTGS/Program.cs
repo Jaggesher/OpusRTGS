@@ -322,7 +322,7 @@ namespace OpusRTGS
                                                     AccountNumber = elements[0].InnerText;
                                                 }
 
-                                                if(SplitFileName[2] == "CM")
+                                                if (SplitFileName[2] == "CM")
                                                 {
                                                     elements = doc.GetElementsByTagName("OrgCrAcct");
                                                     if (elements.Count > 0)
@@ -331,7 +331,7 @@ namespace OpusRTGS
                                                         doc.DocumentElement.RemoveChild(elements[0]);
                                                     }
                                                 }
-                                                
+
 
                                                 elements = doc.GetElementsByTagName("DEBIT_AMOUNT");
                                                 if (elements.Count > 0)
@@ -710,7 +710,7 @@ namespace OpusRTGS
                                                 MsgDefIdr = elements[0].InnerText;
                                             }
 
-                                            if(MsgDefIdr == "pacs.009.001.04")
+                                            if (MsgDefIdr == "pacs.009.001.04")
                                             {
                                                 elements = doc.GetElementsByTagName("CdtrAcct");
                                                 if (elements.Count > 0)
@@ -719,21 +719,45 @@ namespace OpusRTGS
                                                 }
                                             }
 
+                                            elements = doc.GetElementsByTagName("CdtTrfTxInf");
 
-                                            elements = doc.GetElementsByTagName("IntrBkSttlmAmt");
-                                            if (elements.Count > 0)
+                                            if (MsgDefIdr == "pacs.008.001.04" && elements.Count > 1)
                                             {
-                                                Amount = elements[0].InnerText;
-                                                string[] ignoreDot = Amount.Split('.');
-                                                if (ignoreDot.Count() > 0)
-                                                    Amount = ignoreDot[0];
+                                                elements = doc.GetElementsByTagName("TtlIntrBkSttlmAmt");
+                                                if (elements.Count > 0)
+                                                {
+                                                    Amount = elements[0].InnerText;
+                                                    string[] ignoreDot = Amount.Split('.');
+                                                    if (ignoreDot.Count() > 0)
+                                                        Amount = ignoreDot[0];
+                                                }
+
+                                                elements = doc.GetElementsByTagName("MsgId");
+                                                if (elements.Count > 0)
+                                                {
+                                                    InstrId = elements[0].InnerText;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                elements = doc.GetElementsByTagName("IntrBkSttlmAmt");
+                                                if (elements.Count > 0)
+                                                {
+                                                    Amount = elements[0].InnerText;
+                                                    string[] ignoreDot = Amount.Split('.');
+                                                    if (ignoreDot.Count() > 0)
+                                                        Amount = ignoreDot[0];
+                                                }
+
+                                                elements = doc.GetElementsByTagName("InstrId");
+                                                if (elements.Count > 0)
+                                                {
+                                                    InstrId = elements[0].InnerText;
+                                                }
                                             }
 
-                                            elements = doc.GetElementsByTagName("InstrId");
-                                            if (elements.Count > 0)
-                                            {
-                                                InstrId = elements[0].InnerText;
-                                            }
+
+
 
                                             string MyTmp = $"SELECT TOP(1) AccountNumber, Amount , Status, BBxmlFileName FROM RTGSBatchBBExpec WHERE InstrId = '{InstrId}';";
                                             SqlCommand Mycmd = new SqlCommand(MyTmp, connection);
@@ -799,6 +823,16 @@ namespace OpusRTGS
                                             {
                                                 sw.WriteLine();
                                                 string Tmp1 = $"INSERT INTO RTGSBatchGetKeeperLog (FileName,Remarks,DateTime,Type) VALUES('{file.Name}','File block With status Temonus Fail',getdate(),'BB');";
+                                                SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
+                                                cmd1.ExecuteScalar();
+
+                                                if (File.Exists(RejectFolder + "//" + file.Name)) File.Delete(RejectFolder + "//" + file.Name);
+                                                File.Move(file.FullName, RejectFolder + "//" + file.Name);
+                                            }
+                                            else if (BBxmlFileNameQ == "N/A")
+                                            {
+                                                sw.WriteLine();
+                                                string Tmp1 = $"INSERT INTO RTGSBatchGetKeeperLog (FileName,Remarks,DateTime,Type) VALUES('{file.Name}','File block With status Not Expected To BB',getdate(),'BB');";
                                                 SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
                                                 cmd1.ExecuteScalar();
 
