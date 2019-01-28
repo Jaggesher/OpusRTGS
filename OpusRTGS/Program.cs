@@ -1132,7 +1132,7 @@ namespace OpusRTGS
                                                     }
                                                 }
 
-                                               // Console.WriteLine("IB");
+                                                // Console.WriteLine("IB");
                                             }
                                             else if (SplitFileName[1] == "TT")
                                             {
@@ -1164,6 +1164,12 @@ namespace OpusRTGS
                                                 if (SplitFileName[2] == "IO")
                                                 {
                                                     string myTemp = $"UPDATE ReturnRTGS SET TrStatus = '{Status}' WHERE FileName = '{file.Name}';";
+                                                    SqlCommand Mycmd = new SqlCommand(myTemp, connection);
+                                                    Mycmd.ExecuteScalar();
+                                                }
+                                                else if (SplitFileName[2] == "CM")
+                                                {
+                                                    string myTemp = $"UPDATE CallMoney SET TrStatus = '{Status}' WHERE XMLFileName = '{file.Name}';";
                                                     SqlCommand Mycmd = new SqlCommand(myTemp, connection);
                                                     Mycmd.ExecuteScalar();
                                                 }
@@ -1306,7 +1312,7 @@ namespace OpusRTGS
                                         cmdTm.Parameters.AddWithValue("@StatusID", 1);
                                         cmdTm.Parameters.AddWithValue("@ProcessType", "BB");
 
-                                        if (SplitFileName.Length > 1 && SplitFileName[1] == "BB")
+                                        if (SplitFileName.Length > 2 && SplitFileName[1] == "BB" && SplitFileName[2] != "CM")
                                         {
                                             string Tmp = $"UPDATE RTGS SET BBTraNumber = '{resultData}', BBErrDescription = 'N/A', BBTrStatus = '1' WHERE BBFileName = '{NormalizeFileName}'";
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
@@ -1319,11 +1325,16 @@ namespace OpusRTGS
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             cmd.ExecuteScalar();
                                             cmdTm.ExecuteScalar();
+                                        }else if (SplitFileName.Length > 2 && SplitFileName[1] == "BB" && SplitFileName[2] == "CM")
+                                        {
+                                            string Tmp = $"UPDATE CallMoney SET BBTraNumber = '{resultData}', BBErrDescription = 'N/A', BBTrStatus = '1' WHERE BBFileName = '{NormalizeFileName}'";
+                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                            cmd.ExecuteScalar();
                                         }
 
-                                        //Aditional Logic
+                                            //Aditional Logic
 
-                                        handleDuplicate.InsertUpdateFile(connection, file.Name, "SATPAckErr");
+                                            handleDuplicate.InsertUpdateFile(connection, file.Name, "SATPAckErr");
 
                                         AffectedFileCount++;
                                     }
@@ -1368,7 +1379,7 @@ namespace OpusRTGS
                                         cmdTm.Parameters.AddWithValue("@StatusID", 1);
                                         cmdTm.Parameters.AddWithValue("@ProcessType", "BB");
 
-                                        if (SplitFileName.Length > 1 && SplitFileName[1] == "BB")
+                                        if (SplitFileName.Length > 2 && SplitFileName[1] == "BB" && SplitFileName[2] != "CM")
                                         {
                                             string Tmp = $"UPDATE RTGS SET BBTraNumber = 'N/A', BBErrDescription = '{ErrMessage}', BBTrStatus = '-1' WHERE BBFileName = '{NormalizeFileName}'";
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
@@ -1381,6 +1392,12 @@ namespace OpusRTGS
                                             SqlCommand cmd = new SqlCommand(Tmp, connection);
                                             cmd.ExecuteScalar();
                                             cmdTm.ExecuteScalar();
+                                        }
+                                        else if (SplitFileName.Length > 2 && SplitFileName[1] == "BB" && SplitFileName[2] == "CM")
+                                        {
+                                            string Tmp = $"UPDATE CallMoney SET BBTraNumber = 'N/A', BBErrDescription = '{ErrMessage}', BBTrStatus = '-1' WHERE BBFileName = '{NormalizeFileName}'";
+                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                            cmd.ExecuteScalar();
                                         }
 
                                         //Aditional Logic
@@ -1654,7 +1671,7 @@ namespace OpusRTGS
                                                 }
                                                 else if (TempName == "camt025")
                                                 {
-                                                    
+
 
                                                     BizMsgIdr = InerTextOfTag(doc, "BizMsgIdr");
                                                     CreDt = InerTextOfTag(doc, "CreDt");
