@@ -927,27 +927,32 @@ namespace OpusRTGS
         private readonly string BackupFolder;
         private readonly string DestinationFolder;
         private readonly string LogFolder;
+        private readonly string RejectedFolder;
         private readonly string ConnectionString;
+        private readonly XmlDocument doc;
         private readonly HandleDuplicate handleDuplicate;
         public RTGSReturn()
         {
             #region  Testing...
-            //SourceFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\From";
-            //BackupFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\Backup";
-            //DestinationFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\Return_READ\To";
-            //LogFolder = @"D:\Opus\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\Return_IN";
-            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\Return_READ\From";
+            BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\Return_READ\Backup";
+            DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\Return_READ\To";
+            LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\Return_IN";
+            RejectedFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BatchReturnReject";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
             #region Deploy...
-            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\ReturnInBound";
-            BackupFolder = @"D:\RTGSFiles\ReturnInboundToInput";
-            DestinationFolder = @"D:\distr_STPAdapter_v21_36\input";
-            LogFolder = @"D:\RTGSFiles\LogFiles\ReturnInboundToInput";
-            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\ReturnInBound";
+            //BackupFolder = @"D:\RTGSFiles\ReturnInboundToInput";
+            //DestinationFolder = @"D:\distr_STPAdapter_v21_36\input";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\ReturnInboundToInput";
+            //RejectedFolder = @"";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
 
             handleDuplicate = HandleDuplicate.getInstance();
+            doc = new XmlDocument();
         }
 
         public void Run()
@@ -981,27 +986,79 @@ namespace OpusRTGS
                                         sw.Write(file.FullName);
                                         try
                                         {
-                                            File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
-                                            sw.Write(" | Coppied  successfully | ");
-                                            if (File.Exists(BackupFolder + "\\" + file.Name))
+                                            doc.Load(file.FullName);
+                                            string Amount, InstrId;
+                                            Amount = InstrId = "N/A";
+
+                                            XmlNodeList elements = doc.GetElementsByTagName("OrgnlInstrId");
+                                            if (elements.Count > 0)
                                             {
-                                                File.Delete(BackupFolder + "\\" + file.Name);
-                                                sw.Write("Duplicate Name | ");
+                                                InstrId = elements[0].InnerText;
                                             }
 
-                                            File.Move(file.FullName, BackupFolder + "\\" + file.Name);
-                                            sw.Write("Moved successfully");
-                                            sw.WriteLine();
 
-                                            string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
+                                            elements = doc.GetElementsByTagName("RtrdIntrBkSttlmAmt");
+                                            if (elements.Count > 0)
+                                            {
+                                                Amount = elements[0].InnerText;
+                                                string[] ignoreDot = Amount.Split('.');
+                                                if (ignoreDot.Count() > 0)
+                                                    Amount = ignoreDot[0];
+                                            }
 
-                                            string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From ReturnInBound To SATP Input', '{NormalFileName}')";
-                                            SqlCommand cmd = new SqlCommand(Tmp, connection);
-                                            cmd.ExecuteScalar();
+                                            string Tmp1 = $"SELECT TOP 1 Status FROM RTGSBatchTemounsExpec  WHERE Amount= '{Amount}' AND InstrId = '{InstrId}';";
+                                            SqlCommand cmd1 = new SqlCommand(Tmp1, connection);
+                                            string fileStatusCheck = (string)cmd1.ExecuteScalar();
 
-                                            handleDuplicate.InsertFile(connection, file.Name, file.FullName, "ReturnToInput");
 
-                                            AffectedFileCount++;
+                                            if (fileStatusCheck == "notposted" || fileStatusCheck == "fail")
+                                            {
+                                                Tmp1 = $"UPDATE RTGSBatchTemounsExpec SET Status = 'returned' WHERE Amount= '{Amount}' AND InstrId = '{InstrId}';";
+                                                cmd1 = new SqlCommand(Tmp1, connection);
+                                                cmd1.ExecuteScalar();
+
+                                                Tmp1 = $"INSERT INTO RTGSBatchGetKeeperLog (FileName,Remarks,DateTime,Type) VALUES('{file.Name}','File Pass With status {fileStatusCheck}',getdate(),'InbR');";
+                                                cmd1 = new SqlCommand(Tmp1, connection);
+                                                cmd1.ExecuteScalar();
+
+
+                                                File.Copy(file.FullName, DestinationFolder + "\\" + file.Name, true);
+                                                sw.Write(" | Coppied  successfully | ");
+                                                if (File.Exists(BackupFolder + "\\" + file.Name))
+                                                {
+                                                    File.Delete(BackupFolder + "\\" + file.Name);
+                                                    sw.Write("Duplicate Name | ");
+                                                }
+
+                                                File.Move(file.FullName, BackupFolder + "\\" + file.Name);
+                                                sw.Write("Moved successfully");
+                                                sw.WriteLine();
+
+                                                string NormalFileName = Path.GetFileNameWithoutExtension(file.Name);
+
+                                                string Tmp = $"INSERT INTO RTGSInwordLog(Date, Remarks, XMLFileName) VALUES(getdate(), 'File Moved From ReturnInBound To SATP Input', '{NormalFileName}')";
+                                                SqlCommand cmd = new SqlCommand(Tmp, connection);
+                                                cmd.ExecuteScalar();
+
+                                                handleDuplicate.InsertFile(connection, file.Name, file.FullName, "ReturnToInput");
+
+                                                AffectedFileCount++;
+                                            }
+                                            else
+                                            {
+                                                sw.Write(" | Unexpected File");
+                                                sw.WriteLine();
+
+                                                Tmp1 = $"INSERT INTO RTGSBatchGetKeeperLog (FileName,Remarks,DateTime,Type) VALUES('{file.Name}','File Block With status Not expected',getdate(),'InbR');";
+                                                 cmd1 = new SqlCommand(Tmp1, connection);
+                                                cmd1.ExecuteScalar();
+
+                                                if (File.Exists(RejectedFolder + "//" + file.Name)) File.Delete(RejectedFolder + "//" + file.Name);
+
+                                                File.Move(file.FullName, RejectedFolder + "//" + file.Name);
+
+                                            }
+
 
                                         }
                                         catch (IOException e)
@@ -1163,7 +1220,7 @@ namespace OpusRTGS
                                                     SqlCommand Mycmd = new SqlCommand(myTemp, connection);
                                                     string MyStatus = (string)Mycmd.ExecuteScalar();
 
-                                                    if (MyStatus != "success")
+                                                    if (MyStatus != "success" && MyStatus != "returned")
                                                     {
                                                         myTemp = $"UPDATE RTGSBatchTemounsExpec SET Status='fail' WHERE xmlFileName = '{file.Name}';";
                                                         Mycmd = new SqlCommand(myTemp, connection);
