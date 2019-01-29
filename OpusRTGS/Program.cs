@@ -368,6 +368,11 @@ namespace OpusRTGS
 
                                                     if (File.Exists(RejectedFolder + "//Dup//" + file.Name)) File.Delete(RejectedFolder + "//Dup//" + file.Name);
                                                     File.Move(file.FullName, RejectedFolder + "//Dup//" + file.Name);
+
+                                                     Tmp1 = $"INSERT INTO RTGSBatchGetKeeperLog (FileName,Remarks,DateTime,Type) VALUES('{file.Name}','File Block With status Duplicate',getdate(),'TTBB');";
+                                                     cmd1 = new SqlCommand(Tmp1, connection);
+                                                    cmd1.ExecuteScalar();
+
                                                 }
                                                 else
                                                 {
