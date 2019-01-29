@@ -939,21 +939,21 @@ namespace OpusRTGS
         public RTGSReturn()
         {
             #region  Testing...
-            SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\Return_READ\From";
-            BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\Return_READ\Backup";
-            DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\Return_READ\To";
-            LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\Return_IN";
-            RejectedFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BatchReturnReject";
-            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            //SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\Return_READ\From";
+            //BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\Return_READ\Backup";
+            //DestinationFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\Return_READ\To";
+            //LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\Return_IN";
+            //RejectedFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BatchReturnReject";
+            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
             #region Deploy...
-            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\ReturnInBound";
-            //BackupFolder = @"D:\RTGSFiles\ReturnInboundToInput";
-            //DestinationFolder = @"D:\distr_STPAdapter_v21_36\input";
-            //LogFolder = @"D:\RTGSFiles\LogFiles\ReturnInboundToInput";
-            //RejectedFolder = @"";
-            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\ReturnInBound";
+            BackupFolder = @"D:\RTGSFiles\ReturnInboundToInput";
+            DestinationFolder = @"D:\distr_STPAdapter_v21_36\input";
+            LogFolder = @"D:\RTGSFiles\LogFiles\ReturnInboundToInput";
+            RejectedFolder = @"D:\RTGSFiles\BatchReturnReject";
+            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
 
             handleDuplicate = HandleDuplicate.getInstance();
@@ -1625,16 +1625,16 @@ namespace OpusRTGS
         public InboundFileProcess()
         {
             #region Testing...
-            SourceFolder = @"E:\Development\Jogessor\newfile\InBoundData";
-            LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\InboundFileProcessLog";
-            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            //SourceFolder = @"E:\Development\Jogessor\newfile\InBoundData";
+            //LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\InboundFileProcessLog";
+            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
 
             #region Deploy...
-            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
-            //LogFolder = @"D:\RTGSFiles\LogFiles\RTGSFileProcess";
-            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\InBoundData";
+            LogFolder = @"D:\RTGSFiles\LogFiles\RTGSFileProcess";
+            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
             handleDuplicate = HandleDuplicate.getInstance();
         }
