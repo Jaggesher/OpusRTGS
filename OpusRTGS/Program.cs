@@ -27,8 +27,8 @@ namespace OpusRTGS
                     Console.WriteLine("Executing...........");
 
                     #region Operations
-                   // rtgsStatusUpdate.Run();
-                    rtgsRead.Run();
+                    rtgsStatusUpdate.Run();
+                    //rtgsRead.Run();
                    // rtgsInbound.Run();
                    // bbOutBoundData.Run();
                    // rtgsReturn.Run();
@@ -69,24 +69,24 @@ namespace OpusRTGS
         public RTGSRead()
         {
             #region Testing...
-            SourceFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\XmlDataToREAD\From";
-            BackupFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\XmlDataToREAD\Backup";
-            DestinationFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\XmlDataToREAD\To";
-            LogFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
-            RejectedFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\XmlDataToREAD\BatchReject";
-            RawBackupFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\XmlDataToREAD\RAWXmlToREAD";
-            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            //SourceFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\XmlDataToREAD\From";
+            //BackupFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\XmlDataToREAD\Backup";
+            //DestinationFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\XmlDataToREAD\To";
+            //LogFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\BackUpRTGSInWordLogFiles\XmlDataToREAD";
+            //RejectedFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\XmlDataToREAD\BatchReject";
+            //RawBackupFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\XmlDataToREAD\RAWXmlToREAD";
+            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
             #endregion
 
 
             #region Deploy...
-            //SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\xmldata";
-            //BackupFolder = @"D:\RTGSFiles\xmlToREAD";
-            //DestinationFolder = @"X:\AGR.READ";
-            //LogFolder = @"D:\RTGSFiles\LogFiles\xmlToRead";
-            //RejectedFolder = @"D:\RTGSFiles\BatchReject";
-            //RawBackupFolder = @"D:\RTGSFiles\RAWXmlToREAD";
-            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            SourceFolder = @"C:\inetpub\wwwroot\RTGS\Upload\xmldata";
+            BackupFolder = @"D:\RTGSFiles\xmlToREAD";
+            DestinationFolder = @"X:\AGR.READ";
+            LogFolder = @"D:\RTGSFiles\LogFiles\xmlToRead";
+            RejectedFolder = @"D:\RTGSFiles\BatchReject";
+            RawBackupFolder = @"D:\RTGSFiles\RAWXmlToREAD";
+            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
             #endregion
 
             handleDuplicate = HandleDuplicate.getInstance();
@@ -1166,17 +1166,17 @@ namespace OpusRTGS
         {
 
             #region Testing...  
-            //LogFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\BackUpRTGSInWordLogFiles\RTGSStatus";
-            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
-            //SourceFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\Source";//Assuming Test is your Folder
-            //BackupFolder = @"E:\Development\Jogessor\2018-12-25\RTGS\RTGSStatus\backup";
+            LogFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\BackUpRTGSInWordLogFiles\RTGSStatus";
+            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            SourceFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\RTGSStatus\Source";//Assuming Test is your Folder
+            BackupFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\RTGSStatus\backup";
             #endregion
 
             #region Deploy...
-            LogFolder = @"D:\RTGSFiles\LogFiles\T24StatusUpdate";
-            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
-            SourceFolder = @"X:\AGR.WRITE";//Assuming Test is your Folder
-            BackupFolder = @"D:\RTGSFiles\T24WriteBackup";
+            //LogFolder = @"D:\RTGSFiles\LogFiles\T24StatusUpdate";
+            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            //SourceFolder = @"X:\AGR.WRITE";//Assuming Test is your Folder
+            //BackupFolder = @"D:\RTGSFiles\T24WriteBackup";
             #endregion
 
             handleDuplicate = HandleDuplicate.getInstance();
@@ -1313,15 +1313,33 @@ namespace OpusRTGS
 
                                                 if (Status == "1")
                                                 {
-                                                    string myTemp = $"UPDATE RTGSBatchBBExpec SET Status = 'success',SuccessDate = getdate() WHERE FileName='{file.Name}';";
-                                                    SqlCommand Mycmd = new SqlCommand(myTemp, connection);
-                                                    Mycmd.ExecuteScalar();
+                                                    if(SplitFileName[2] != "IO")
+                                                    {
+                                                        string myTemp = $"UPDATE RTGSBatchBBExpec SET Status = 'success',SuccessDate = getdate() WHERE FileName='{file.Name}';";
+                                                        SqlCommand Mycmd = new SqlCommand(myTemp, connection);
+                                                        Mycmd.ExecuteScalar();
+                                                    }
+                                                    else
+                                                    {
+                                                        string myTemp = $"UPDATE RTGSBatchIOExpec SET Status = 'success',SuccessDate = getdate() WHERE IOxmlFileName='{file.Name}';";
+                                                        SqlCommand Mycmd = new SqlCommand(myTemp, connection);
+                                                        Mycmd.ExecuteScalar();
+                                                    }
+                                                    
                                                 }
                                                 else
                                                 {
-                                                    string myTemp = $"UPDATE RTGSBatchBBExpec SET Status = 'fail' WHERE FileName='{file.Name}';";
-                                                    SqlCommand Mycmd = new SqlCommand(myTemp, connection);
-                                                    Mycmd.ExecuteScalar();
+                                                    if (SplitFileName[2] != "IO")
+                                                    {
+                                                        string myTemp = $"UPDATE RTGSBatchBBExpec SET Status = 'fail' WHERE FileName='{file.Name}';";
+                                                        SqlCommand Mycmd = new SqlCommand(myTemp, connection);
+                                                        Mycmd.ExecuteScalar();
+                                                    }
+                                                    else{
+                                                        string myTemp = $"UPDATE RTGSBatchBBExpec SET Status = 'fail' WHERE IOxmlFileName='{file.Name}';";
+                                                        SqlCommand Mycmd = new SqlCommand(myTemp, connection);
+                                                        Mycmd.ExecuteScalar();
+                                                    }
                                                 }
 
 
