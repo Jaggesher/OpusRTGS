@@ -378,7 +378,6 @@ namespace OpusRTGS
                                                     }
                                                     else
                                                     {
-
                                                         flag = true;
                                                         doc.Save(file.FullName);
 
@@ -413,7 +412,7 @@ namespace OpusRTGS
                                                         flag = true;
                                                         doc.Save(file.FullName);
 
-                                                        Tmp1 = $"UPDATE RTGSBatchIOExpec SET Status = 'posted', T24DateTime = getdate() WHERE InstrId = '{InstrId}';";
+                                                        Tmp1 = $"UPDATE RTGSBatchIOExpec SET Status = 'posted', IOxmlFileName='{file.Name}' , T24DateTime = getdate() WHERE InstrId = '{InstrId}';";
                                                         cmd1 = new SqlCommand(Tmp1, connection);
                                                         cmd1.ExecuteScalar();
 
