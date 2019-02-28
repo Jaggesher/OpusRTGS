@@ -28,12 +28,12 @@ namespace OpusRTGS
 
                     #region Operations
                     rtgsStatusUpdate.Run();
-                    //rtgsRead.Run();
-                   // rtgsInbound.Run();
-                   // bbOutBoundData.Run();
-                   // rtgsReturn.Run();
-                   // stapStatusUpdate.Run();
-                   // inboundFileProcess.Run();
+                    rtgsRead.Run();
+                    rtgsInbound.Run();
+                    bbOutBoundData.Run();
+                    rtgsReturn.Run();
+                    stapStatusUpdate.Run();
+                    inboundFileProcess.Run();
                     #endregion
 
                     Console.WriteLine(".....DONE......");
@@ -1166,17 +1166,17 @@ namespace OpusRTGS
         {
 
             #region Testing...  
-            LogFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\BackUpRTGSInWordLogFiles\RTGSStatus";
-            ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
-            SourceFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\RTGSStatus\Source";//Assuming Test is your Folder
-            BackupFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\RTGSStatus\backup";
+            //LogFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\BackUpRTGSInWordLogFiles\RTGSStatus";
+            //ConnectionString = @"Data Source=.;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@1234;Pooling=true;Max Pool Size=32700;Integrated Security=True";
+            //SourceFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\RTGSStatus\Source";//Assuming Test is your Folder
+            //BackupFolder = @"E:\Jaggesher WorkSpace\RTGS\RTGS\RTGSStatus\backup";
             #endregion
 
             #region Deploy...
-            //LogFolder = @"D:\RTGSFiles\LogFiles\T24StatusUpdate";
-            //ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
-            //SourceFolder = @"X:\AGR.WRITE";//Assuming Test is your Folder
-            //BackupFolder = @"D:\RTGSFiles\T24WriteBackup";
+            LogFolder = @"D:\RTGSFiles\LogFiles\T24StatusUpdate";
+            ConnectionString = @"Data Source=WIN-7HGA9A6FBHT;Initial Catalog=db_ABL_RTGS;User ID=sa;Password=sa@123; Pooling=true;Max Pool Size=32700;";
+            SourceFolder = @"X:\AGR.WRITE";//Assuming Test is your Folder
+            BackupFolder = @"D:\RTGSFiles\T24WriteBackup";
             #endregion
 
             handleDuplicate = HandleDuplicate.getInstance();
